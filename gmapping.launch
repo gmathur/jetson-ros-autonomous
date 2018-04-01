@@ -1,4 +1,6 @@
 <launch>
+  <include file="$(find ydlidar)/launch/lidar.launch" />
+
   <arg name="use_rviz" default="true" />
   <arg name="publish_covariance" default="false"/>
 
