@@ -1,4 +1,9 @@
 <launch>
+  <node pkg="tf" type="static_transform_publisher" name="base_footprint_to_base_link"
+    args="0.0 0.0 0.1 0.0 0.0  0.0 /base_link /base_footprint 40" />
+
+  <include file="$(find ydlidar)/launch/lidar.launch" />
+
   <arg name="use_rviz" default="true" />
   <arg name="publish_covariance" default="false"/>
 
@@ -10,6 +15,7 @@
   </group>
 
   #### publish an example base_link -> laser transform ###########
+
 
   #### start the laser scan_matcher ##############################
 

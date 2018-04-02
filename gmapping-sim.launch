@@ -1,10 +1,9 @@
 <launch>
+  <param name ="/use_sim_time" value="true"/>
   <node pkg="tf" type="static_transform_publisher" name="base_footprint_to_base_link"
     args="0.0 0.0 0.1 0.0 0.0  0.0 /base_link /base_footprint 40" />
   <node pkg="tf" type="static_transform_publisher" name="map_to_world"
     args="0.0 0.0 0.0 0.0 0.0  0.0 /map /world 40" />
-
-  <include file="$(find ydlidar)/launch/lidar.launch" />
 
   <arg name="use_rviz" default="true" />
   <arg name="publish_covariance" default="false"/>
@@ -19,16 +18,6 @@
   #### publish an example base_link -> laser transform ###########
 
   #### start the laser scan_matcher ##############################
-
-  <group if="$(arg publish_covariance)">
-    <param name="laser_scan_matcher_node/do_compute_covariance" value="1"/>
-    <param name="laser_scan_matcher_node/publish_pose_with_covariance" value="true"/>
-    <param name="laser_scan_matcher_node/publish_pose_with_covariance_stamped" value="true"/>
-  </group>
-  <node pkg="laser_scan_matcher" type="laser_scan_matcher_node"
-    name="laser_scan_matcher_node" output="screen">
-    <param name="max_iterations" value="10"/>
-  </node>
 
   #### start gmapping ############################################
 
