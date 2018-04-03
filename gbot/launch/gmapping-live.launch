@@ -4,6 +4,7 @@
   <include file="$(find ydlidar)/launch/lidar.launch" />
 
   #### start the laser scan_matcher ##############################
+  <arg name="publish_covariance" default="false"/>
 
   <group if="$(arg publish_covariance)">
     <param name="laser_scan_matcher_node/do_compute_covariance" value="1"/>
