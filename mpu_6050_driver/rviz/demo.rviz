@@ -68,7 +68,7 @@ Visualization Manager:
         x_scale: 1
         y_scale: 2
         z_scale: 0.200000003
-      Class: rviz_imu_plugin/Imu
+      Class: rviz_plugin_tutorials/Imu
       Enabled: true
       Name: Imu
       Topic: /imu/data
