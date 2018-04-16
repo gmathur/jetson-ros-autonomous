@@ -1,4 +1,7 @@
 <launch>
+
+  #### publish static transforms ###########
+
   <node pkg="tf" type="static_transform_publisher" name="base_footprint_to_base_link"
     args="0.0 0.0 0.1 0.0 0.0  0.0 /base_link /base_footprint 40" />
   <node pkg="tf" type="static_transform_publisher" name="map_to_world"
@@ -9,6 +12,12 @@
 
   <param name="/stamped_vel" value="false"/>
 
+  #### Start MPU 6050 driver ###########
+
+  <node pkg="mpu_6050_driver" type="imu_node.py" name="mpu_6050_driver_node" required="true" />
+
+  #### start the laser scan_matcher ##############################
+
   <group if="$(arg use_rviz)">
     <node pkg="rviz" type="rviz" name="rviz"
           args="-d $(find laser_scan_matcher)/demo/demo_gmapping.rviz"/>
@@ -17,10 +26,6 @@
       <param name="use_vel" value="false"/>
       <param name="max_iterations" value="10"/>
   </group>
-
-  #### publish an example base_link -> laser transform ###########
-
-  #### start the laser scan_matcher ##############################
 
   #### start gmapping ############################################
 
