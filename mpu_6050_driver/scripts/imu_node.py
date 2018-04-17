@@ -5,6 +5,7 @@ import smbus
 import struct
 import rospy
 import numpy as np
+from kalman import KalmanFilter
 from sensor_msgs.msg import Temperature, Imu
 from tf.transformations import quaternion_about_axis
 from mpu_6050_driver.registers import PWR_MGMT_1, ACCEL_XOUT_H, ACCEL_YOUT_H, ACCEL_ZOUT_H, TEMP_H,\
@@ -13,6 +14,13 @@ from mpu_6050_driver.registers import PWR_MGMT_1, ACCEL_XOUT_H, ACCEL_YOUT_H, AC
 ADDR = None
 bus = None
 IMU_FRAME = None
+
+kalman_GyroX = KalmanFilter(147, 294)
+kalman_GyroY = KalmanFilter(90, 180)
+kalman_GyroZ = KalmanFilter(71, 142)
+kalman_AccelX = KalmanFilter(61, 122)
+kalman_AccelY = KalmanFilter(60, 120)
+kalman_AccelZ = KalmanFilter(98, 196)
 
 # read_word and read_word_2c from http://blog.bitify.co.uk/2013/11/reading-data-from-mpu-6050-on-raspberry.html
 def read_word(adr):
@@ -41,9 +49,17 @@ def publish_imu(timer_event):
     imu_msg.header.frame_id = IMU_FRAME
 
     # Read the acceleration vals
-    accel_x = read_word_2c(ACCEL_XOUT_H) / 16384.0
-    accel_y = read_word_2c(ACCEL_YOUT_H) / 16384.0
-    accel_z = read_word_2c(ACCEL_ZOUT_H) / 16384.0
+    raw_accel_x = read_word_2c(ACCEL_XOUT_H)
+    raw_accel_y = read_word_2c(ACCEL_YOUT_H)
+    raw_accel_z = read_word_2c(ACCEL_ZOUT_H)
+
+    kalman_AccelX.noisy_measurement(raw_accel_x)
+    kalman_AccelY.noisy_measurement(raw_accel_y)
+    kalman_AccelZ.noisy_measurement(raw_accel_z)
+
+    accel_x = kalman_AccelX.get_estimate() / 16384.0
+    accel_y = kalman_AccelY.get_estimate() / 16384.0
+    accel_z = kalman_AccelZ.get_estimate() / 16384.0
     
     # Calculate a quaternion representing the orientation
     accel = accel_x, accel_y, accel_z
@@ -54,9 +70,17 @@ def publish_imu(timer_event):
     orientation = quaternion_about_axis(angle, axis)
 
     # Read the gyro vals
-    gyro_x = read_word_2c(GYRO_XOUT_H) / 131.0
-    gyro_y = read_word_2c(GYRO_YOUT_H) / 131.0
-    gyro_z = read_word_2c(GYRO_ZOUT_H) / 131.0
+    raw_gyro_x = read_word_2c(GYRO_XOUT_H)
+    raw_gyro_y = read_word_2c(GYRO_YOUT_H)
+    raw_gyro_z = read_word_2c(GYRO_ZOUT_H)
+
+    kalman_GyroX.noisy_measurement(raw_gyro_x)
+    kalman_GyroY.noisy_measurement(raw_gyro_y)
+    kalman_GyroZ.noisy_measurement(raw_gyro_z)
+
+    gyro_x = kalman_GyroX.get_estimate() / 131.0
+    gyro_y = kalman_GyroY.get_estimate() / 131.0
+    gyro_z = kalman_GyroZ.get_estimate() / 131.0
     
     # Load up the IMU message
     o = imu_msg.orientation
