@@ -15,12 +15,13 @@ ADDR = None
 bus = None
 IMU_FRAME = None
 
-kalman_GyroX = KalmanFilter(147, 294)
-kalman_GyroY = KalmanFilter(90, 180)
-kalman_GyroZ = KalmanFilter(71, 142)
-kalman_AccelX = KalmanFilter(61, 122)
-kalman_AccelY = KalmanFilter(60, 120)
-kalman_AccelZ = KalmanFilter(98, 196)
+process_variance = 10 # original was 1e-3
+kalman_GyroX = KalmanFilter(process_variance, 147 ** 2) # original was ** 2
+kalman_GyroY = KalmanFilter(process_variance, 90 ** 2)
+kalman_GyroZ = KalmanFilter(process_variance, 71 ** 2)
+kalman_AccelX = KalmanFilter(process_variance, 61 ** 2)
+kalman_AccelY = KalmanFilter(process_variance, 60 ** 2)
+kalman_AccelZ = KalmanFilter(process_variance, 98 ** 2)
 
 # read_word and read_word_2c from http://blog.bitify.co.uk/2013/11/reading-data-from-mpu-6050-on-raspberry.html
 def read_word(adr):
