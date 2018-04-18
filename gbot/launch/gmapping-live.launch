@@ -3,7 +3,6 @@
   <include file="$(find gbot)/launch/gmapping-core.launch" />
   <include file="$(find ydlidar)/launch/lidar.launch" />
 
-  #### start the laser scan_matcher ##############################
   <arg name="publish_covariance" default="false"/>
 
   <group if="$(arg publish_covariance)">
@@ -11,9 +10,18 @@
     <param name="laser_scan_matcher_node/publish_pose_with_covariance" value="true"/>
     <param name="laser_scan_matcher_node/publish_pose_with_covariance_stamped" value="true"/>
   </group>
-  <node pkg="laser_scan_matcher" type="laser_scan_matcher_node"
-    name="laser_scan_matcher_node" output="screen">
-    <param name="max_iterations" value="10"/>
-  </node>
+
+  #### Start MPU 6050 driver ###########
+
+  <node pkg="mpu_6050_driver" type="imu_node.py" name="mpu_6050_driver_node" required="true" />
+
+  <group if="$(arg use_rviz)">
+    <node pkg="rviz" type="rviz" name="rviz"
+          args="-d $(find laser_scan_matcher)/demo/demo_gmapping.rviz"/>
+      <param name="use_imu" value="true"/>
+      <param name="use_odom" value="false"/>
+      <param name="use_vel" value="false"/>
+      <param name="max_iterations" value="10"/>
+  </group>
 
 </launch>
