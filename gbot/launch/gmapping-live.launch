@@ -6,18 +6,14 @@
 
   <node pkg="tf" type="static_transform_publisher" name="map_to_world"
     args="0.0 0.0 0.0 0.0 0.0  0.0 /world /map 40" />
-  <node pkg="tf" type="static_transform_publisher" name="base_footprint_to_base_link"
-    args="0.0 0.0 0.1 0.0 0.0  0.0 /base_footprint /base_link 40" />
   <node pkg="tf" type="static_transform_publisher" name="base_link_to_imu_link"
-    args="0.0 0.0 0.1 0.0 0.0  0.0 /base_footprint /imu_link 40" />
+    args="0.0 0.0 0.1 0.0 0.0  0.0 /base_link /imu_link 40" />
 
   <arg name="publish_covariance" default="false"/>
 
   <param name="/stamped_vel" value="false"/>
 
   <include file="$(find ydlidar)/launch/lidar.launch" />
-
-  <arg name="publish_covariance" default="false"/>
 
   <group if="$(arg publish_covariance)">
     <param name="laser_scan_matcher_node/do_compute_covariance" value="1"/>
