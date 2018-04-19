@@ -6,6 +6,8 @@
     args="0.0 0.0 0.1 0.0 0.0  0.0 /base_link /base_footprint 40" />
   <node pkg="tf" type="static_transform_publisher" name="map_to_world"
     args="0.0 0.0 0.0 0.0 0.0  0.0 /map /world 40" />
+  <node pkg="tf" type="static_transform_publisher" name="imu_link_to_map"
+    args="0.0 0.0 0.1 0.0 0.0  0.0 /imu_link /map 40" />
 
   <arg name="use_rviz" default="true" />
   <arg name="publish_covariance" default="false"/>
