@@ -10,6 +10,7 @@ Panels:
         - /Map1
         - /Imu1
         - /Temperature1
+        - /TF1
       Splitter Ratio: 0.5
     Tree Height: 489
   - Class: rviz/Selection
@@ -111,7 +112,7 @@ Visualization Manager:
       Channel Name: temperature
       Class: rviz/Temperature
       Color: 255; 255; 255
-      Color Transformer: ""
+      Color Transformer: Intensity
       Decay Time: 0
       Enabled: true
       Invert Rainbow: true
@@ -120,7 +121,7 @@ Visualization Manager:
       Min Color: 0; 0; 0
       Min Intensity: 0
       Name: Temperature
-      Position Transformer: ""
+      Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
@@ -130,6 +131,40 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
+      Value: true
+    - Class: rviz/TF
+      Enabled: true
+      Frame Timeout: 15
+      Frames:
+        All Enabled: true
+        base_link:
+          Value: true
+        imu_link:
+          Value: true
+        laser:
+          Value: true
+        map:
+          Value: true
+        odom:
+          Value: true
+        world:
+          Value: true
+      Marker Scale: 2
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
+      Tree:
+        world:
+          map:
+            base_link:
+              imu_link:
+                {}
+              laser:
+                {}
+            odom:
+              {}
+      Update Interval: 0
       Value: true
   Enabled: true
   Global Options:
@@ -192,5 +227,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 1200
-  X: 41
+  X: 65
   Y: 24
