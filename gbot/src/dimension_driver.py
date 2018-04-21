@@ -2,7 +2,7 @@
 import time
 import serial
 
-class RobotDriver:
+class DimensionDriver:
     def __init__(self, address, port):
         self.address = 128
         self.ser = serial.Serial(
@@ -47,16 +47,17 @@ class RobotDriver:
     def close(self):
         self.ser.close()
 
-driver = RobotDriver(128, '/dev/serial0')
-driver.open()
-driver.drive_forward(127)
-time.sleep(1)
-driver.drive_backward(127)
-time.sleep(1)
-driver.turn_right(50)
-time.sleep(1)
-driver.turn_left(50)
-time.sleep(1)
-driver.stop()
+if __name__== "__main__":
+    driver = DimensionDriver(128, '/dev/serial0')
+    driver.open()
+    driver.drive_forward(127)
+    time.sleep(1)
+    driver.drive_backward(127)
+    time.sleep(1)
+    driver.turn_right(50)
+    time.sleep(1)
+    driver.turn_left(50)
+    time.sleep(1)
+    driver.stop()
 
-driver.close()
+    driver.close()
