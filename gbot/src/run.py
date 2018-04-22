@@ -7,6 +7,7 @@ def main(win):
     driver = RobotPilot()
     driver.open()
     driver.forward()
+    driver.start()
 
     try:
         win.nodelay(True)
@@ -26,10 +27,13 @@ def main(win):
         driver.close()
 
 def run():
-    driver = RobotPilot()
-    driver.open()
-    driver.forward()
-    driver.start()
+    try:
+        driver = RobotPilot()
+        driver.open()
+        driver.forward()
+        driver.start()
+    finally:
+        driver.close()
 
 #curses.wrapper(main)
 run()

@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 
-class RobotState:
-    FORWARD = 1
-    REVERSE = 2
-    LEFT = 3
-    RIGHT = 4
-    STOP = 5
+class Enum(set):
+    def __getattr__(self, name):
+        if name in self:
+            return name
+        raise AttributeError
+
+RobotState = Enum(["FORWARD", "REVERSE", "LEFT",
+    "RIGHT", "STOP"])
 
 class CommandSource:
     DISTANCE_SENSOR = 1

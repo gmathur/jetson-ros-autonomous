@@ -4,7 +4,7 @@ import threading
 import time
 from dimension_driver import DimensionDriver
 from robot_state import RobotState, CommandSource
-from arduino_driver import ArduinoDriver
+from distance_scanner import DistanceScanner
 
 class RobotStates:
     def __init__(self):
@@ -16,10 +16,7 @@ class RobotStates:
             self.states.pop(0)
 
     def check_state_exists(self, state):
-        if self.states.index(state) >= 0:
-            return True
-        else:
-            return False
+        return state in self.states
 
     def get_last_state(self):
         if len(self.states) == 0:
@@ -28,13 +25,12 @@ class RobotStates:
             return self.states[len(self.states)-1]
 
 class RobotPilot:
-    TURN_TIME = 0.2
+    TURN_TIME = 0.8
 
     def __init__(self):
-        self.arduino = ArduinoDriver('/dev/ttyUSB0')
         self.driver = DimensionDriver(128, '/dev/serial0')
         self.state_tracker = RobotStates()
-        self.scanner = DistanceScanner(self.arduino)
+        self.scanner = DistanceScanner()
         self.state_tracker.add(RobotState.STOP)
         self.forward_speed = 127
         self.reverse_speed = 100
@@ -42,7 +38,6 @@ class RobotPilot:
 
     def open(self):
         self.driver.open()
-        self.arduino.open()
 
     def start(self):
         while True:
@@ -54,21 +49,20 @@ class RobotPilot:
         self.state_tracker.add(RobotState.STOP)
 
         self.driver.close()
-        self.arduino.close()
 
     def scan(self):
         min_dist = self.scanner.scan()
 
         # If straight is ok - keep going
-        if True:
-            # TODO
-            threading.Timer(1.0, self.scan)
-        else:
+        if min_dist < 10:
             self.execute_cmd(RobotState.STOP)
-            self.check_obstacles(left, right)
+            self.check_obstacles()
+            threading.Timer(0.01, self.scan)
+        else:
+            self.forward()
             threading.Timer(0.1, self.scan)
 
-    def check_obstacles(self, left, right):
+    def check_obstacles(self):
         # If last state was not turn right - turn right & scan
         if not self.state_tracker.check_state_exists(RobotState.RIGHT):
             self.turn_right()
@@ -120,22 +114,3 @@ class RobotPilot:
         elif cmd == RobotState.STOP:
             self.driver.stop()
 
-class DistanceScanner:
-    def __init__(self, arduino_driver):
-        self.arduino_driver = arduino_driver
-
-    def scan(self):
-        values = self.arduino_driver.scan()
-
-        print("Distance sensor", values)
-        split_values = values.split(",")
-        
-        min_dist = 10000
-        if split_values[0] < min_dist:
-            min_dist = split_values[0]
-        if split_values[1] < min_dist:
-            min_dist = split_values[1]
-        if split_values[2] < min_dist:
-            min_dist = split_values[2]
-
-        return min_dist
