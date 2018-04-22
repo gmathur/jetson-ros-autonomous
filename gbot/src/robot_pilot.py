@@ -31,7 +31,7 @@ class RobotPilot:
     TURN_TIME = 0.2
 
     def __init__(self):
-        self.arduino = ArduinoDriver('/dev/ttyUSB1')
+        self.arduino = ArduinoDriver('/dev/ttyUSB0')
         self.driver = DimensionDriver(128, '/dev/serial0')
         self.state_tracker = RobotStates()
         self.scanner = DistanceScanner(self.arduino)
@@ -42,12 +42,14 @@ class RobotPilot:
 
     def open(self):
         self.driver.open()
-        self.arduino.open(self)
+        self.arduino.open()
 
-        threading.Timer(1.0, self.scan)
+    def start(self):
+        while True:
+            self.scan()
+            time.sleep(1)
 
     def close(self):
-        self.timer.cancel()
         self.driver.stop()
         self.state_tracker.add(RobotState.STOP)
 
@@ -88,12 +90,12 @@ class RobotPilot:
     def forward(self):
         self.execute_cmd(RobotState.FORWARD)
 
-    def turn_left(self, run_time = RobotPilot.TURN_TIME):
+    def turn_left(self, run_time = TURN_TIME):
         self.execute_cmd(RobotState.LEFT)
         time.sleep(run_time)
         self.execute_cmd(RobotState.STOP)
 
-    def turn_right(self, run_time = RobotPilot.TURN_TIME):
+    def turn_right(self, run_time = TURN_TIME):
         self.execute_cmd(RobotState.RIGHT)
         time.sleep(run_time)
         self.execute_cmd(RobotState.STOP)
@@ -104,19 +106,19 @@ class RobotPilot:
         self.execute_cmd(RobotState.STOP)
 
     def execute_cmd(self, cmd):
-        print("Executing " + cmd)
+        print("Executing ", cmd)
         self.state_tracker.add(cmd)
         
         if cmd == RobotState.FORWARD:
-            driver.drive_forward(self.forward_speed)
+            self.driver.drive_forward(self.forward_speed)
         elif cmd == RobotState.REVERSE:
-            driver.drive_backward(self.reverse_speed)
+            self.driver.drive_backward(self.reverse_speed)
         elif cmd == RobotState.LEFT:
-            driver.turn_left(self.turn_speed)
+            self.driver.turn_left(self.turn_speed)
         elif cmd == RobotState.RIGHT:
-            driver.turn_right(self.turn_speed)
+            self.driver.turn_right(self.turn_speed)
         elif cmd == RobotState.STOP:
-            driver.stop()
+            self.driver.stop()
 
 class DistanceScanner:
     def __init__(self, arduino_driver):
@@ -125,6 +127,7 @@ class DistanceScanner:
     def scan(self):
         values = self.arduino_driver.scan()
 
+        print("Distance sensor", values)
         split_values = values.split(",")
         
         min_dist = 10000

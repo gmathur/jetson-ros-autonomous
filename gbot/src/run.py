@@ -25,5 +25,11 @@ def main(win):
     finally:
         driver.close()
 
-curses.wrapper(main)
+def run():
+    driver = RobotPilot()
+    driver.open()
+    driver.forward()
+    driver.start()
 
+#curses.wrapper(main)
+run()
