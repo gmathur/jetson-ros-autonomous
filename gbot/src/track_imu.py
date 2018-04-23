@@ -37,7 +37,7 @@ class TrackImu:
             objc = getattr(c, j)
 
             for i in components:
-                diff = round(getattr(objb, i) - getattr(obja, i), 1)
+                diff = round(getattr(objb, i) - getattr(obja, i), 3)
                 if diff > getattr(objc, i):
                     setattr(objc, i, diff)
                     changed = True
@@ -53,19 +53,20 @@ class TrackImu:
         updated = self.subtract_components(data, self.baseline_imu, self.max_imu)
 
         # Updated max
-        if updated:
-            print("Updated max IMU data %s", self.max_imu)
+#        if updated:
+#            print("Updated max IMU data %s", self.max_imu)
 
     def is_angular_change_significant(self):
-        if self.max_imu.angular_velocity.x > 1.0 or self.max_imu.angular_velocity.y > 1.0 or \
-           self.max_imu.angular_velocity.z > 1.0:
+        if self.max_imu.angular_velocity.x >= 0.01 or self.max_imu.angular_velocity.y >= 0.01 or \
+           self.max_imu.angular_velocity.z >= 0.01:
             return True
         else:
             return False
 
     def is_linear_change_significant(self):
-        if self.max_imu.linear_acceleration.x > 1.0 or self.max_imu.linear_acceleration.y > 1.0 or \
-            self.max_imu.linear_acceleration.z > 1.0:
+        if self.max_imu.linear_acceleration.x >= 0.01 or self.max_imu.linear_acceleration.y >= 0.01 or \
+            self.max_imu.linear_acceleration.z >= 0.01:
             return True
         else:
+            print("Returning false for IMU data %s", self.max_imu)
             return False

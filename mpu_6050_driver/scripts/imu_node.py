@@ -16,7 +16,7 @@ ADDR = None
 bus = None
 IMU_FRAME = None
 
-process_variance = 1e-7 # original was 1e-3
+process_variance = 1e-4 # original was 1e-3
 kalman_GyroX = KalmanFilter(process_variance, 0.2351505886 ** 2)
 kalman_GyroY = KalmanFilter(process_variance, 0.1027677148 ** 2)
 kalman_GyroZ = KalmanFilter(process_variance, 0.09293135685 ** 2)

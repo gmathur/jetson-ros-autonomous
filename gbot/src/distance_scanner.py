@@ -2,6 +2,8 @@
 import Adafruit_ADS1x15
 from servo import ServoControl
 
+ENABLE_SERVO = 0
+
 class SharpScanner:
     def __init__(self):
         self.adc = Adafruit_ADS1x15.ADS1115()
@@ -24,23 +26,28 @@ class DistanceScanner:
     def __init__(self):
         self.scanner = SharpScanner()
         self.servo = ServoControl()
-        self.servo.setAngle(90)
+        if ENABLE_SERVO:
+            self.servo.setAngle(90)
 
     def scan(self):
         # Scan straight
         straight_dist = self.scanner.scan()
         min_dist = straight_dist
 
-        self.servo.setAngle(45)
+        if ENABLE_SERVO:
+            self.servo.setAngle(45)
         right_dist = self.scanner.scan()
         if right_dist < min_dist:
             min_dist = right_dist
  
-        self.servo.setAngle(135)
+        if ENABLE_SERVO:
+            self.servo.setAngle(135)
         left_dist = self.scanner.scan()
         if left_dist < min_dist:
             min_dist = left_dist
-        self.servo.setAngle(90)
+
+        if ENABLE_SERVO:
+            self.servo.setAngle(90)
         
         print("Left %d Straight %d Right %d. Min %d" % (left_dist, straight_dist, right_dist, min_dist))
 

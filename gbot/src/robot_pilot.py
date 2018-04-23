@@ -12,6 +12,11 @@ class RobotStates:
         self.states = []
 
     def add(self, state):
+        if state == RobotState.STOP and len(self.states) > 0 and \
+                self.states[len(self.states)-1] == state:
+            # Dont store multiple STOP states in the list
+            return
+
         self.states.append(state)
         if len(self.states) > 4:
             self.states.pop(0)
@@ -57,6 +62,7 @@ class RobotPilot:
         if self.last_dist:
             if abs(self.last_dist - min_dist) > 150:
                 self.last_dist = min_dist
+                print("Massive reading change - possible collision")
                 return True
 
         self.last_dist = min_dist
@@ -66,15 +72,23 @@ class RobotPilot:
         min_dist = self.scanner.scan()
 
         # If straight is ok - keep going
-        if min_dist < 20 or self.check_for_collision(min_dist):
-            self.execute_cmd(RobotState.STOP)
-            self.check_obstacles()
+        if min_dist <= 15 or self.check_for_collision(min_dist):
+            self.obstacle_encountered()
         else:
+            just_started = len(self.state_tracker.states) == 2 or self.state_tracker.get_last_state() == RobotState.STOP
+            print("Just started %s states %s" % (just_started, self.state_tracker.states))
+            self.track_imu.reset()
             self.forward()
-            if self.track_imu_for_time(0.2, angular=False):
-                self.execute_cmd(RobotState.STOP)
-                self.check_obstacles()
-        
+            threading.Timer(0.5, self.scan)
+            time.sleep(0.3)
+
+            if just_started and not self.track_imu.is_linear_change_significant():
+                print("No change in IMU readings since starting movement")
+                self.obstacle_encountered()
+
+    def obstacle_encountered(self):
+        self.execute_cmd(RobotState.STOP)
+        self.check_obstacles()
         threading.Timer(0.01, self.scan)
 
     def check_obstacles(self):
@@ -99,20 +113,14 @@ class RobotPilot:
     def forward(self):
         self.execute_cmd(RobotState.FORWARD)
 
-    def track_imu_for_time(self, run_time, angular=True):
-        for i in range(0, int(run_time / 0.2)):
+    def track_imu_for_time(self, run_time):
+        for i in range(0, int(run_time / 0.3)):
             self.track_imu.reset()
-            time.sleep(0.2)
-            if angular:
-                if not self.track_imu.is_angular_change_significant():
-                    # Turn isnt happening for whatever reason
-                    print("Aborting turn as IMU isnt changing")
-                    return True
-            else:
-                if not self.track_imu.is_linear_change_significant():
-                    # Not moving forward
-                    print("Stopping movement as IMU isnt changing")
-                    return True
+            time.sleep(0.3)
+            if not self.track_imu.is_angular_change_significant():
+                # Turn isnt happening for whatever reason
+                print("Aborting turn as IMU isnt changing")
+                return True
 
         return False
 
@@ -128,7 +136,7 @@ class RobotPilot:
 
     def reverse(self):
         self.execute_cmd(RobotState.REVERSE)
-        time.sleep(0.5)
+        time.sleep(1)
         self.execute_cmd(RobotState.STOP)
 
     def execute_cmd(self, cmd):
