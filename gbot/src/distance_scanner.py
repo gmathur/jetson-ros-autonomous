@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import Adafruit_ADS1x15
+from servo import ServoControl
 
 class SharpScanner:
     def __init__(self):
@@ -16,21 +17,34 @@ class SharpScanner:
     def scan(self):
         voltage = self.read_adc(0)
         dist = 27.86 * (voltage ** -1.15)
-        print("Sharp voltage", voltage, dist)
 
         return dist
 
 class DistanceScanner:
     def __init__(self):
         self.scanner = SharpScanner()
+        self.servo = ServoControl()
+        self.servo.setAngle(90)
 
     def scan(self):
         # Scan straight
-        dist = self.scanner.scan()
+        straight_dist = self.scanner.scan()
+        min_dist = straight_dist
 
-        # TODO: Find min distance
+        self.servo.setAngle(45)
+        right_dist = self.scanner.scan()
+        if right_dist < min_dist:
+            min_dist = right_dist
+ 
+        self.servo.setAngle(135)
+        left_dist = self.scanner.scan()
+        if left_dist < min_dist:
+            min_dist = left_dist
+        self.servo.setAngle(90)
+        
+        print("Left %d Straight %d Right %d. Min %d", left_dist, straight_dist, right_dist, min_dist)
 
-        return dist
+        return min_dist
 
 if __name__ == "__main__":
     scanner = SharpScanner()

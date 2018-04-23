@@ -13,6 +13,10 @@ class ServoControl:
         self.last_angle = 90
 
     def setAngle(self, angle):
+        if angle == self.last_angle:
+            # Nothing to do
+            return
+
         duty = angle / 18 + 2
         self.pwm.ChangeDutyCycle(duty)
 
