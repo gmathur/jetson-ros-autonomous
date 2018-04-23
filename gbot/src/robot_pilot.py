@@ -25,7 +25,7 @@ class RobotStates:
             return self.states[len(self.states)-1]
 
 class RobotPilot:
-    TURN_TIME = 0.8
+    TURN_TIME = 0.6
 
     def __init__(self):
         self.driver = DimensionDriver(128, '/dev/serial0')
@@ -35,6 +35,7 @@ class RobotPilot:
         self.forward_speed = 127
         self.reverse_speed = 100
         self.turn_speed = 100
+        self.last_dist = None
 
     def open(self):
         self.driver.open()
@@ -50,11 +51,20 @@ class RobotPilot:
 
         self.driver.close()
 
+    def check_for_collision(self, min_dist):
+        if self.last_dist:
+            if abs(self.last_dist - min_dist) > 150:
+                self.last_dist = min_dist
+                return True
+
+        self.last_dist = min_dist
+        return False
+
     def scan(self):
         min_dist = self.scanner.scan()
 
         # If straight is ok - keep going
-        if min_dist < 10:
+        if min_dist < 20 or self.check_for_collision(min_dist):
             self.execute_cmd(RobotState.STOP)
             self.check_obstacles()
             threading.Timer(0.01, self.scan)
