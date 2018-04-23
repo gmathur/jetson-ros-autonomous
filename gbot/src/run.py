@@ -27,8 +27,8 @@ def main(win):
         driver.close()
 
 def run():
+    driver = RobotPilot()
     try:
-        driver = RobotPilot()
         driver.open()
         driver.forward()
         driver.start()
