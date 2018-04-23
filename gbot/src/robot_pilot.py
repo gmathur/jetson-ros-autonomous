@@ -5,6 +5,7 @@ import time
 from dimension_driver import DimensionDriver
 from robot_state import RobotState, CommandSource
 from distance_scanner import DistanceScanner
+from track_imu import TrackImu
 
 class RobotStates:
     def __init__(self):
@@ -31,6 +32,7 @@ class RobotPilot:
         self.driver = DimensionDriver(128, '/dev/serial0')
         self.state_tracker = RobotStates()
         self.scanner = DistanceScanner()
+        self.track_imu = TrackImu()
         self.state_tracker.add(RobotState.STOP)
         self.forward_speed = 127
         self.reverse_speed = 100
@@ -94,14 +96,23 @@ class RobotPilot:
     def forward(self):
         self.execute_cmd(RobotState.FORWARD)
 
+    def track_imu_for_time(self):
+        for i in range(0, run_time / 0.1):
+            self.track_imu.reset()
+            time.sleep(0.1)
+            if not self.track_imu.is_angular_change_significant():
+                # Turn isnt happening for whatever reason
+                print("Aborting turn as IMU isnt changing")
+                break
+
     def turn_left(self, run_time = TURN_TIME):
         self.execute_cmd(RobotState.LEFT)
-        time.sleep(run_time)
+        self.track_imu_for_time(run_time)
         self.execute_cmd(RobotState.STOP)
 
     def turn_right(self, run_time = TURN_TIME):
         self.execute_cmd(RobotState.RIGHT)
-        time.sleep(run_time)
+        self.track_imu_for_time(run_time)
         self.execute_cmd(RobotState.STOP)
 
     def reverse(self):

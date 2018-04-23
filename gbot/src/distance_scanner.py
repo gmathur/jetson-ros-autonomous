@@ -42,7 +42,7 @@ class DistanceScanner:
             min_dist = left_dist
         self.servo.setAngle(90)
         
-        print("Left %d Straight %d Right %d. Min %d", left_dist, straight_dist, right_dist, min_dist)
+        print("Left %d Straight %d Right %d. Min %d" % (left_dist, straight_dist, right_dist, min_dist))
 
         return min_dist
 
