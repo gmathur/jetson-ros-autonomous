@@ -7,9 +7,11 @@ from robot_state import RobotState, CommandSource
 from distance_scanner import DistanceScanner
 from track_imu import TrackImu
 
+
 class RobotStates:
     def __init__(self):
         self.states = []
+        self.dist = 0
 
     def add(self, state):
         if state == RobotState.STOP and len(self.states) > 0 and \
@@ -30,8 +32,16 @@ class RobotStates:
         else:
             return self.states[len(self.states)-1]
 
+    def set_last_dist(self, dist):
+        self.dist = dist
+
+    def get_last_dist(self):
+        return self.dist
+
 class RobotPilot:
     TURN_TIME = 0.6
+    MIN_SPEED = 60 # Multiple of 10
+    MAX_SPEED = 120 # Multiple of 10
 
     def __init__(self):
         self.driver = DimensionDriver(128, '/dev/serial0')
@@ -39,10 +49,9 @@ class RobotPilot:
         self.scanner = DistanceScanner()
         self.track_imu = TrackImu()
         self.state_tracker.add(RobotState.STOP)
-        self.forward_speed = 127
+        self.reset_forward_speed()
         self.reverse_speed = 100
-        self.turn_speed = 100
-        self.last_dist = None
+        self.turn_speed = 90
 
     def open(self):
         self.driver.open()
@@ -59,56 +68,78 @@ class RobotPilot:
         self.driver.close()
 
     def check_for_collision(self, min_dist):
-        if self.last_dist:
-            if abs(self.last_dist - min_dist) > 150:
-                self.last_dist = min_dist
-                print("Massive reading change - possible collision")
+        if self.state_tracker.dist:
+            if self.state_tracker.dist - min_dist > 175:
+                print("Massive reading change (current %d last %d) - possible collision", self.state_tracker.dist, min_dist)
                 return True
 
-        self.last_dist = min_dist
         return False
 
     def scan(self):
         min_dist = self.scanner.scan()
 
         # If straight is ok - keep going
-        if min_dist <= 15 or self.check_for_collision(min_dist):
+        if min_dist <= 25 or self.check_for_collision(min_dist):
             self.obstacle_encountered()
         else:
             just_started = len(self.state_tracker.states) == 2 or self.state_tracker.get_last_state() == RobotState.STOP
-            print("Just started %s states %s" % (just_started, self.state_tracker.states))
             self.track_imu.reset()
+            self.adjust_speed(min_dist)
             self.forward()
-            threading.Timer(0.5, self.scan)
-            time.sleep(0.3)
+            time.sleep(0.2)
 
             if just_started and not self.track_imu.is_linear_change_significant():
                 print("No change in IMU readings since starting movement")
                 self.obstacle_encountered()
+            else:
+                threading.Timer(0.01, self.scan)
+                self.state_tracker.set_last_dist(min_dist)
 
     def obstacle_encountered(self):
         self.execute_cmd(RobotState.STOP)
+        self.state_tracker.set_last_dist(0)
         self.check_obstacles()
         threading.Timer(0.01, self.scan)
+
+    def reset_forward_speed(self):
+        self.forward_speed = RobotPilot.MIN_SPEED
+
+    def reduce_forward_speed(self):
+        if self.forward_speed > RobotPilot.MIN_SPEED:
+            self.forward_speed -= 10
+
+    def increase_forward_speed(self):
+        if self.forward_speed < RobotPilot.MAX_SPEED:
+            self.forward_speed += 10
+            if self.forward_speed > 127:
+                self.forward_speed = 127
+
+    def adjust_speed(self, min_dist):
+        if min_dist > 70 or min_dist >= (self.state_tracker.get_last_dist() - 2):
+            self.increase_forward_speed()
+            print("min dist: %d, last dist %d, Increased speed to %d" % (min_dist, self.state_tracker.get_last_dist(), self.forward_speed))
+        else:
+            self.reduce_forward_speed()
+            print("min dist: %d, last dist %d. Decreased speed to %d" % (min_dist, self.state_tracker.get_last_dist(), self.forward_speed))
 
     def check_obstacles(self):
         # If last state was not turn right - turn right & scan
         if not self.state_tracker.check_state_exists(RobotState.RIGHT):
             self.turn_right()
+            return
         elif not self.state_tracker.check_state_exists(RobotState.LEFT):
             # Else if last state was not turn left - turn left + left & scan
             self.turn_left(run_time=2 * RobotPilot.TURN_TIME)
+            return
         elif not self.state_tracker.check_state_exists(RobotState.REVERSE):
             # Tried turning right and left. So we are wedged - back out
-            self.turn_right()
             self.reverse()
+        
+        rand = random.random()
+        if rand <= 0.5:
+            self.turn_left()
         else:
-            rand = random.random()
-
-            if rand <= 0.5:
-                self.turn_left()
-            else:
-                self.turn_right()
+            self.turn_right()
 
     def forward(self):
         self.execute_cmd(RobotState.FORWARD)
@@ -140,7 +171,7 @@ class RobotPilot:
         self.execute_cmd(RobotState.STOP)
 
     def execute_cmd(self, cmd):
-        print("Executing ", cmd)
+        print("Executing %s fwd speed: %d" % (cmd, self.forward_speed))
         self.state_tracker.add(cmd)
         
         if cmd == RobotState.FORWARD:
@@ -153,4 +184,5 @@ class RobotPilot:
             self.driver.turn_right(self.turn_speed)
         elif cmd == RobotState.STOP:
             self.driver.stop()
+            self.reset_forward_speed()
 
