@@ -69,10 +69,13 @@ class RobotPilot:
         if min_dist < 20 or self.check_for_collision(min_dist):
             self.execute_cmd(RobotState.STOP)
             self.check_obstacles()
-            threading.Timer(0.01, self.scan)
         else:
             self.forward()
-            threading.Timer(0.1, self.scan)
+            if self.track_imu_for_time(0.2, angular=False):
+                self.execute_cmd(RobotState.STOP)
+                self.check_obstacles()
+        
+        threading.Timer(0.01, self.scan)
 
     def check_obstacles(self):
         # If last state was not turn right - turn right & scan
@@ -96,14 +99,22 @@ class RobotPilot:
     def forward(self):
         self.execute_cmd(RobotState.FORWARD)
 
-    def track_imu_for_time(self):
-        for i in range(0, run_time / 0.1):
+    def track_imu_for_time(self, run_time, angular=True):
+        for i in range(0, int(run_time / 0.2)):
             self.track_imu.reset()
-            time.sleep(0.1)
-            if not self.track_imu.is_angular_change_significant():
-                # Turn isnt happening for whatever reason
-                print("Aborting turn as IMU isnt changing")
-                break
+            time.sleep(0.2)
+            if angular:
+                if not self.track_imu.is_angular_change_significant():
+                    # Turn isnt happening for whatever reason
+                    print("Aborting turn as IMU isnt changing")
+                    return True
+            else:
+                if not self.track_imu.is_linear_change_significant():
+                    # Not moving forward
+                    print("Stopping movement as IMU isnt changing")
+                    return True
+
+        return False
 
     def turn_left(self, run_time = TURN_TIME):
         self.execute_cmd(RobotState.LEFT)
