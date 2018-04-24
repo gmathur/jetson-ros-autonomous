@@ -19,6 +19,12 @@ class DimensionDriver:
             self.ser.open()
         time.sleep(0.2)
 
+        # Set a 3 second timeout
+        self.send_command(14, 30)
+
+        # Fast ramping of 1/8 seconds
+        self.send_command(16, 2)
+
     def send_command(self, cmd, speed):
         values = [self.address, cmd, speed, (self.address + cmd + speed) & 127]
         msg = bytes(bytearray(values))
