@@ -31,23 +31,14 @@ class TrackImu:
         rospy.init_node('listener', anonymous=True)
         rospy.Subscriber("imu/data", Imu, self.callback)
         rospy.Subscriber("imu/euler", Vector3, self.euler_callback)
-        self.max_imu = Imu()
-        self.max_euler = Vector3()
         self.reset_imu = True
         self.reset_euler = True
         self.baseline_imu = None
         self.baseline_euler = None
         self.last_euler = None
+        self.last_imu = None
 
     def reset(self):
-        objects = [self.max_imu.linear_acceleration, self.max_imu.angular_velocity,
-                   self.max_euler]
-        components = ["x", "y", "z"]
-
-        for obj in objects:
-            for i in components:
-                setattr(obj, i, 0)
-
         self.reset_imu = True
         self.reset_euler = True
 
@@ -83,7 +74,6 @@ class TrackImu:
             self.baseline_euler = data
 
         self.last_euler = data
-        updated = self.subtract_vectors(data, self.baseline_euler, self.max_euler)
 
     def callback(self, data):
 #        print(rospy.get_caller_id() + "I heard %s", data)
@@ -91,18 +81,19 @@ class TrackImu:
             self.reset_imu = False
             self.baseline_imu = data
 
-        updated = self.subtract_components(data, self.baseline_imu, self.max_imu)
-
-        # Updated max
-#        if updated:
-#            print("Updated max IMU data %s", self.max_imu)
+        self.last_imu = data
 
     def is_linear_change_significant(self):
-        if self.max_imu.linear_acceleration.x >= 0.01 or self.max_imu.linear_acceleration.y >= 0.01 or \
-            self.max_imu.linear_acceleration.z >= 0.01:
+        if self.baseline_imu is None or self.last_imu is None:
+            return 0.0
+
+        max_imu = Imu()
+        self.subtract_components(self.baseline_imu, self.last_imu, max_imu)
+        if max_imu.linear_acceleration.x >= 0.01 or max_imu.linear_acceleration.y >= 0.01 or \
+           max_imu.linear_acceleration.z >= 0.01:
             return True
         else:
-            print("Returning false for IMU data %s", self.max_imu)
+            print("Returning false for IMU data %s", max_imu)
             return False
 
     def get_angular_change(self):
