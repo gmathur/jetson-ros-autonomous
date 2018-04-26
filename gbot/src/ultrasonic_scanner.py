@@ -3,8 +3,8 @@ import time
 import math
 import RPi.GPIO as GPIO
 
-TRIGGER_PIN = 23
-SENSOR_PINS = [24]
+TRIGGER_PIN = 17
+SENSOR_PINS = [18, 22, 27]
 SAMPLE_WAIT=0.1
 
 class SensorState:
