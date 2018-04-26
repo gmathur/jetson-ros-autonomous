@@ -7,12 +7,14 @@ class DimensionDriver:
         self.address = 128
         self.ser = serial.Serial(
             port=port, #Replace ttyS0 with ttyAM0 for Pi1,Pi2,Pi0
-            baudrate = 9600,
+            baudrate = 38400,
             parity=serial.PARITY_NONE,
             stopbits=serial.STOPBITS_ONE,
             bytesize=serial.EIGHTBITS,
             timeout=1
         )
+
+        self.send_command(15, 4)
       
     def open(self):
         if not self.ser.is_open:
