@@ -3,8 +3,8 @@ import time
 import math
 import RPi.GPIO as GPIO
 
-TRIGGER_PIN = 18
-SENSOR_PINS = [19]
+TRIGGER_PIN = 23
+SENSOR_PINS = [24]
 SAMPLE_WAIT=0.1
 
 class SensorState:
@@ -12,7 +12,8 @@ class SensorState:
     STARTED = 1
     STOPPED = 2
 
-    def __init__(self):
+    def __init__(self, pin):
+        self.pin = pin
         self.start = 0
         self.end = 0
         self.state = SensorState.WAIT_FOR_START
@@ -29,17 +30,17 @@ class SensorState:
         return self.state_map[self.state]()
 
     def wait_for_start(self):
-        if GPIO.input(pin) != 0:
-            current_pin_state.start = time.time()
-            current_pin_state.state += 1
+        if GPIO.input(self.pin) != 0:
+            self.start = time.time()
+            self.state += 1
         #else keep waiting while 0
 
         return 0 # not finished
 
     def started(self):
-        if GPIO.input(pin) != 1:
-            current_pin_state.end = time.time()
-            current_pin_state.state += 1
+        if GPIO.input(self.pin) != 1:
+            self.end = time.time()
+            self.state += 1
         #else keep waiting while 1
 
         return 0 # not finished
@@ -47,10 +48,15 @@ class SensorState:
     def stopped(self):
         return 1 # finished
 
+    def __repr__(self):
+        return("State %s start %s end %s dist %f" % (self.state, self.start, self.end, self.get_dist(330)))
+
 class UltrasonicScanner:
     def __init__(self, temperature=20.0):
         self.speed_of_sound = 331.3 * math.sqrt(1+(temperature / 273.15))
+        self.num_sensors = len(SENSOR_PINS)
         GPIO.setwarnings(False)
+        GPIO.setmode(GPIO.BCM)
         GPIO.setup(TRIGGER_PIN, GPIO.OUT)
         for pin in SENSOR_PINS:
             GPIO.setup(pin, GPIO.IN)
@@ -60,10 +66,12 @@ class UltrasonicScanner:
         GPIO.cleanup(SENSOR_PINS)
 
     def scan(self, sample_size=3):
-        samples_runs = []
+        samples = []
         
         for _ in range(sample_size):
-            sensor_states = [SensorState()] * len(SENSOR_PINS)
+            sensor_states = []
+            for pin in SENSOR_PINS:
+                sensor_states.append(SensorState(pin))
 
             # Trigger echo
             GPIO.output(TRIGGER_PIN, False)
@@ -73,25 +81,28 @@ class UltrasonicScanner:
             GPIO.output(TRIGGER_PIN, False)
 
             completed = 0
-            while(completed < len(SENSOR_PINS)):
+            while(completed < self.num_sensors):
                 completed = 0
 
-                for pin in SENSOR_PINS:
+                for pin in range(self.num_sensors):
                     completed += sensor_states[pin].execute()
 
-            samples_runs.append(sensor_states)
+            samples.append(sensor_states)
 
+        print samples
         # Results
-        final_results = [0.0] * len(SENSOR_PINS)
+        final_results = [0.0] * self.num_sensors
 
         # Compute states
-        for sample in range(sample_size):
-            for state in sample:
-                final_results[i] += state.get_dist(self.speed_of_sound)
+        for i in range(self.num_sensors):
+            for sample in samples:
+                print sample[i].get_dist(self.speed_of_sound), final_results[i]
+                final_results[i] += sample[i].get_dist(self.speed_of_sound)
 
         # Average
         return tuple([ x / sample_size for x in final_results ])
 
 if __name__ == "__main__":
     scanner = UltrasonicScanner()
-    scanner.scan()
+    dist = scanner.scan()
+    print dist

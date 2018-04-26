@@ -1,17 +1,17 @@
 #!/usr/bin/env python
-#from ultrasonic_scanner import UltrasonicScanner
-from sharp_scanner import SharpScanner
+from ultrasonic_scanner import UltrasonicScanner
+#from sharp_scanner import SharpScanner
 
 class DistanceScanner:
     def __init__(self):
-#        self.scanner = UltrasonicScanner()
-        self.scanner = SharpScanner()
+        self.scanner = UltrasonicScanner()
+#        self.scanner = SharpScanner()
 
     def scan(self):
         # Scan left, straight, right
         straight_dist = self.scanner.scan()
-        left_dist = straight_dist
-        right_dist = straight_dist
+        left_dist = straight_dist[0]
+        right_dist = straight_dist[0]
 
         min_dist = straight_dist
         if left_dist < min_dist:
@@ -19,7 +19,7 @@ class DistanceScanner:
         if right_dist < min_dist:
             min_dist = right_dist
     
-        print("Left %d Straight %d Right %d. Min %d" % (left_dist, straight_dist,
+        print("Left %d Straight %d Right %d. Min %d" % (left_dist, straight_dist[0],
             right_dist, min_dist))
 
         return min_dist
