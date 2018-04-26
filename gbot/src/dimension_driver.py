@@ -34,20 +34,18 @@ class DimensionDriver:
         self.ser.flush()
 
     def drive_forward(self, speed):
-        self.send_command(0, speed)
-        self.send_command(4, speed)
+        self.send_command(13, 64)
+        self.send_command(8, speed)
 
     def drive_backward(self, speed):
-        self.send_command(1, speed)
-        self.send_command(5, speed)
+        self.send_command(13, 64)
+        self.send_command(9, speed)
 
     def turn_right(self, speed):
-        self.send_command(0, speed)
-        self.send_command(5, speed)
+        self.send_command(13, 64 + int(speed/2))
     
     def turn_left(self, speed):
-        self.send_command(4, speed)
-        self.send_command(1, speed)
+        self.send_command(13, 64 - int(speed/2))
 
     def stop(self):
         self.drive_forward(0)
