@@ -11,16 +11,16 @@ class SensorState:
     WAIT_FOR_START = 0
     STARTED = 1
     STOPPED = 2
-    state_map = [
-        self.wait_for_start,
-        self.started,
-        self.stopped
-    ]
 
     def __init__(self):
         self.start = 0
         self.end = 0
         self.state = SensorState.WAIT_FOR_START
+        self.state_map = [
+            self.wait_for_start,
+            self.started,
+            self.stopped
+        ]
 
     def get_dist(self, speed_of_sound):
         return (self.end - self.start) * ((speed_of_sound * 100) / 2)

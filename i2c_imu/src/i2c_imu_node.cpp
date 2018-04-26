@@ -89,7 +89,7 @@ I2cImu::I2cImu() :
 	private_nh_.param("publish_euler", euler, true);
 	if (euler)
 	{
-		euler_pub_ = nh_.advertise<geometry_msgs::Vector3>("euler", 10, false);
+		euler_pub_ = nh_.advertise<geometry_msgs::Vector3>("/imu/euler", 10, false);
 	}
 
 	std::vector<double> orientation_covariance, angular_velocity_covariance, linear_acceleration_covariance;

@@ -51,7 +51,7 @@ class RobotPilot:
         self.state_tracker.add(RobotState.STOP)
         self.reset_forward_speed()
         self.reverse_speed = 100
-        self.turn_speed = 90
+        self.turn_speed = 80
 
     def open(self):
         self.driver.open()
@@ -129,7 +129,7 @@ class RobotPilot:
             return
         elif not self.state_tracker.check_state_exists(RobotState.LEFT):
             # Else if last state was not turn left - turn left + left & scan
-            self.turn_left(run_time=2 * RobotPilot.TURN_TIME)
+            self.turn_left(turn_time=2 * RobotPilot.TURN_TIME)
             return
         elif not self.state_tracker.check_state_exists(RobotState.REVERSE):
             # Tried turning right and left. So we are wedged - back out
@@ -144,25 +144,34 @@ class RobotPilot:
     def forward(self):
         self.execute_cmd(RobotState.FORWARD)
 
-    def track_imu_for_time(self, run_time):
-        for i in range(0, int(run_time / 0.3)):
-            self.track_imu.reset()
-            time.sleep(0.3)
-            if not self.track_imu.is_angular_change_significant():
+    def track_angular_imu_for_time(self, turn_time, turn_angle=1.57):
+        start_time = time.time()
+
+        self.track_imu.reset()
+        #for i in range(0, int(turn_time / 0.1)):
+        while(True):
+            time.sleep(0.1)
+            angular_change = abs(self.track_imu.get_angular_change())
+            print("Angular change %f" % (angular_change))
+            if angular_change < 0.17:
                 # Turn isnt happening for whatever reason
                 print("Aborting turn as IMU isnt changing")
                 return True
+            
+            if angular_change > turn_angle:
+                return False
 
-        return False
+            if (time.time() - start_time) > 2 * 1000:
+                return True
 
-    def turn_left(self, run_time = TURN_TIME):
+    def turn_left(self, turn_time = TURN_TIME):
         self.execute_cmd(RobotState.LEFT)
-        self.track_imu_for_time(run_time)
+        self.track_angular_imu_for_time(turn_time)
         self.execute_cmd(RobotState.STOP)
 
-    def turn_right(self, run_time = TURN_TIME):
+    def turn_right(self, turn_time = TURN_TIME):
         self.execute_cmd(RobotState.RIGHT)
-        self.track_imu_for_time(run_time)
+        self.track_angular_imu_for_time(turn_time)
         self.execute_cmd(RobotState.STOP)
 
     def reverse(self):

@@ -21,4 +21,5 @@ class SharpScanner:
 
 if __name__ == "__main__":
     scanner = SharpScanner()
-    scanner.scan()
+    dist = scanner.scan()
+    print dist

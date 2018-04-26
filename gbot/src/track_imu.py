@@ -30,13 +30,14 @@ class TrackImu:
     def __init__(self):
         rospy.init_node('listener', anonymous=True)
         rospy.Subscriber("imu/data", Imu, self.callback)
-        rospy.Subscriber("euler", Imu, self.euler_callback)
+        rospy.Subscriber("imu/euler", Vector3, self.euler_callback)
         self.max_imu = Imu()
         self.max_euler = Vector3()
         self.reset_imu = True
         self.reset_euler = True
         self.baseline_imu = None
         self.baseline_euler = None
+        self.last_euler = None
 
     def reset(self):
         objects = [self.max_imu.linear_acceleration, self.max_imu.angular_velocity,
@@ -81,6 +82,7 @@ class TrackImu:
             self.reset_euler = False
             self.baseline_euler = data
 
+        self.last_euler = data
         updated = self.subtract_vectors(data, self.baseline_euler, self.max_euler)
 
     def callback(self, data):
@@ -95,13 +97,6 @@ class TrackImu:
 #        if updated:
 #            print("Updated max IMU data %s", self.max_imu)
 
-    def is_angular_change_significant(self):
-        if self.max_imu.angular_velocity.x >= 0.01 or self.max_imu.angular_velocity.y >= 0.01 or \
-           self.max_imu.angular_velocity.z >= 0.01:
-            return True
-        else:
-            return False
-
     def is_linear_change_significant(self):
         if self.max_imu.linear_acceleration.x >= 0.01 or self.max_imu.linear_acceleration.y >= 0.01 or \
             self.max_imu.linear_acceleration.z >= 0.01:
@@ -111,5 +106,7 @@ class TrackImu:
             return False
 
     def get_angular_change(self):
-        return angle_between((baseline_euler.x, baseline_euler.y, baseline_euler.z),
-            (max_euler.x, max_euler.y, max_euler.z))
+        if self.baseline_euler is None or self.last_euler is None:
+            return 0.0
+        return angle_between((self.baseline_euler.x, self.baseline_euler.y, 0),
+            (self.last_euler.x, self.last_euler.y, 0))

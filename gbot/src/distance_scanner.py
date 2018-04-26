@@ -1,9 +1,11 @@
 #!/usr/bin/env python
-from ultrasonic_scanner import UltrasonicScanner
+#from ultrasonic_scanner import UltrasonicScanner
+from sharp_scanner import SharpScanner
 
 class DistanceScanner:
     def __init__(self):
-        self.scanner = UltrasonicScanner()
+#        self.scanner = UltrasonicScanner()
+        self.scanner = SharpScanner()
 
     def scan(self):
         # Scan left, straight, right
