@@ -9,9 +9,7 @@ class DistanceScanner:
 
     def scan(self):
         # Scan left, straight, right
-        straight_dist = self.scanner.scan()
-        left_dist = straight_dist[0]
-        right_dist = straight_dist[0]
+        (left_dist, straight_dist, right_dist) = self.scanner.scan()
 
         min_dist = straight_dist
         if left_dist < min_dist:
