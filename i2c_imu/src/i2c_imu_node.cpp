@@ -308,6 +308,44 @@ bool I2cImu::ImuSettings::loadSettings()
 	  	ROS_INFO("No Calibration for Accelerometer"); 
 	}
 
+    std::vector<double> gyro_bias;
+	if (settings_nh_->getParam("calib/gyro_bias", gyro_bias)
+			&& gyro_bias.size() == 3)
+	{
+		m_gyroBias = RTVector3(gyro_bias[0], gyro_bias[1], gyro_bias[2]);
+		m_gyroBiasValid = true;
+		
+		ROS_INFO("Got Bias for Gyro");
+	}
+	else
+	{
+	  	ROS_INFO("No Bias for Gyro"); 
+	}
+
+    std::vector<double> compass_ellipsoid;
+    float compass_corr[3][3];
+	if (settings_nh_->getParam("calib/compass_ellipsoid", compass_ellipsoid)
+			&& compass_ellipsoid.size() == 3)
+	{
+		m_compassCalEllipsoidOffset = RTVector3(compass_ellipsoid[0], compass_ellipsoid[1],
+                compass_ellipsoid[2]);
+		m_compassCalEllipsoidValid = true;
+        m_compassCalEllipsoidCorr[0][0] = compass_corr[0][0];
+        m_compassCalEllipsoidCorr[0][1] = compass_corr[0][1];
+        m_compassCalEllipsoidCorr[0][2] = compass_corr[0][2];
+        m_compassCalEllipsoidCorr[1][0] = compass_corr[1][0];
+        m_compassCalEllipsoidCorr[1][1] = compass_corr[1][1];
+        m_compassCalEllipsoidCorr[1][2] = compass_corr[1][2];
+        m_compassCalEllipsoidCorr[2][0] = compass_corr[2][0];
+        m_compassCalEllipsoidCorr[2][1] = compass_corr[2][1];
+        m_compassCalEllipsoidCorr[2][2] = compass_corr[2][2];
+		
+		ROS_INFO("Got Ellipsoid data for Compass");
+	}
+	else
+	{
+	  	ROS_INFO("No Compass Ellipsoid data"); 
+	}
 
 	return true;
 }
