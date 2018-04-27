@@ -1,0 +1,21 @@
+<launch>
+  <param name ="/use_sim_time" value="false"/>
+  <arg name="use_rviz" default="true" />
+
+  #### Start MPU 9255 driver ###########
+
+  <node pkg="i2c_imu" type="i2c_imu_node" name="i2c_imu" output="screen" required="true">
+      <rosparam file="$(find i2c_imu)/param/imu.yaml"/>
+  </node>
+
+  #### Start proximity scanning ###########
+
+  <node pkg="gbot" type="distance_scanner.py" name="proximity_scanner" output="screen" required="true">
+  </node>
+
+  #### Start pilot program ###########
+
+  <node pkg="gbot" type="robot_pilot.py" name="robot_pilot" output="screen" >
+  </node>
+
+</launch>
