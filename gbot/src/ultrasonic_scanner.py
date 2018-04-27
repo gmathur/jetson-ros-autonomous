@@ -81,22 +81,25 @@ class UltrasonicScanner:
             GPIO.output(TRIGGER_PIN, False)
 
             completed = 0
+            start_time = time.time()
             while(completed < self.num_sensors):
                 completed = 0
 
                 for pin in range(self.num_sensors):
                     completed += sensor_states[pin].execute()
 
+                if time.time() - start_time > 1000:
+                    return
+
             samples.append(sensor_states)
 
-        print samples
         # Results
         final_results = [0.0] * self.num_sensors
 
         # Compute states
         for i in range(self.num_sensors):
             for sample in samples:
-                print sample[i].get_dist(self.speed_of_sound), final_results[i]
+                #print sample[i].get_dist(self.speed_of_sound), final_results[i]
                 final_results[i] += sample[i].get_dist(self.speed_of_sound)
 
         # Average
