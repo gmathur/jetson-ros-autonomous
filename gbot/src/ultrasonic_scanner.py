@@ -100,7 +100,7 @@ class UltrasonicScanner:
                 final_results[i] += sample[i].get_dist(self.speed_of_sound)
 
         # Average
-        return tuple([ x / sample_size for x in final_results ])
+        return [ x / sample_size for x in final_results ]
 
 if __name__ == "__main__":
     scanner = UltrasonicScanner()

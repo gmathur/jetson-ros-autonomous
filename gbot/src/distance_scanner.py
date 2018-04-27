@@ -12,30 +12,18 @@ class DistanceScanner:
 
     def spin(self):
         while not rospy.is_shutdown():
-            left, straight, right = scanner.scan()
-            
+            # Scan left, straight, right
+            distances = self.scanner.scan()
+    
+            rospy.loginfo("Distances %s" % (distances))
+
             msg = Proximity()
             msg.stamp = rospy.Time.now()
-            msg.left = left
-            msg.straight = straight
-            msg.right = right
+            msg.left = distances[0]
+            msg.straight = distances[1]
+            msg.right = distances[2]
             
             self.pub.publish(msg)
-
-    def scan(self):
-        # Scan left, straight, right
-        (left_dist, straight_dist, right_dist) = self.scanner.scan()
-
-        min_dist = straight_dist
-        if left_dist < min_dist:
-            min_dist = left_dist
-        if right_dist < min_dist:
-            min_dist = right_dist
-    
-        rospy.loginfo("Left %d Straight %d Right %d. Min %d" % (left_dist, straight_dist[0],
-            right_dist, min_dist))
-
-        return min_dist
 
 if __name__ == "__main__":
     rospy.init_node('proximity_node')
