@@ -1,12 +1,14 @@
 #!/usr/bin/env python
+import rospy
 import random
 import threading
 import time
 from dimension_driver import DimensionDriver
 from robot_state import RobotState, CommandSource
-from distance_scanner import DistanceScanner
 from track_imu import TrackImu
-
+from gbot.msg import Proximity
+from sensor_msgs.msg import Imu
+from geometry_msgs.msg import Vector3
 
 class RobotStates:
     def __init__(self):
@@ -46,20 +48,22 @@ class RobotPilot:
     def __init__(self):
         self.driver = DimensionDriver(128, '/dev/serial0')
         self.state_tracker = RobotStates()
-        self.scanner = DistanceScanner()
         self.track_imu = TrackImu()
         self.state_tracker.add(RobotState.STOP)
         self.reset_forward_speed()
         self.reverse_speed = 100
         self.turn_speed = 80
 
+        rospy.Subscriber("proximity", Proximity, self.proximity_callback, queue_size=1)
+        rospy.Subscriber("imu/data", Imu, self.track_imu.imu_callback, queue_size=1)
+        rospy.Subscriber("imu/euler", Vector3, self.track_imu.euler_callback, queue_size=1)
+        self.last_execution = time.time() - 100000
+
     def open(self):
         self.driver.open()
 
     def start(self):
-        while True:
-            self.scan()
-            time.sleep(1)
+        rospy.spin()
 
     def close(self):
         self.driver.stop()
@@ -70,13 +74,22 @@ class RobotPilot:
     def check_for_collision(self, min_dist):
         if self.state_tracker.dist:
             if self.state_tracker.dist - min_dist > 175:
-                print("Massive reading change (current %d last %d) - possible collision", self.state_tracker.dist, min_dist)
+                rospy.loginfo("Massive reading change (current %d last %d) - possible collision", self.state_tracker.dist, min_dist)
                 return True
 
         return False
 
-    def scan(self):
-        min_dist = self.scanner.scan()
+    def proximity_callback(self, data):
+        if data.stamp.secs < rospy.Time.now().secs - 2:
+            rospy.loginfo("Skipping old message")
+            self.execute_cmd(RobotState.STOP)
+            return
+
+        min_dist = data.left
+        if data.straight < min_dist:
+            min_dist = data.straight
+        if data.right < min_dist:
+            min_dist = data.right
 
         # If straight is ok - keep going
         if min_dist <= 25 or self.check_for_collision(min_dist):
@@ -89,17 +102,17 @@ class RobotPilot:
             time.sleep(0.2)
 
             if just_started and not self.track_imu.is_linear_change_significant():
-                print("No change in IMU readings since starting movement")
+                rospy.loginfo("No change in IMU readings since starting movement")
                 self.obstacle_encountered()
             else:
-                threading.Timer(0.01, self.scan)
                 self.state_tracker.set_last_dist(min_dist)
+
+        self.last_execution = time.time()
 
     def obstacle_encountered(self):
         self.execute_cmd(RobotState.STOP)
         self.state_tracker.set_last_dist(0)
         self.check_obstacles()
-        threading.Timer(0.01, self.scan)
 
     def reset_forward_speed(self):
         self.forward_speed = RobotPilot.MIN_SPEED
@@ -117,10 +130,10 @@ class RobotPilot:
     def adjust_speed(self, min_dist):
         if min_dist > 70 or min_dist >= (self.state_tracker.get_last_dist() - 2):
             self.increase_forward_speed()
-            print("min dist: %d, last dist %d, Increased speed to %d" % (min_dist, self.state_tracker.get_last_dist(), self.forward_speed))
+            rospy.loginfo("min dist: %d, last dist %d, Increased speed to %d" % (min_dist, self.state_tracker.get_last_dist(), self.forward_speed))
         else:
             self.reduce_forward_speed()
-            print("min dist: %d, last dist %d. Decreased speed to %d" % (min_dist, self.state_tracker.get_last_dist(), self.forward_speed))
+            rospy.loginfo("min dist: %d, last dist %d. Decreased speed to %d" % (min_dist, self.state_tracker.get_last_dist(), self.forward_speed))
 
     def check_obstacles(self):
         # If last state was not turn right - turn right & scan
@@ -152,10 +165,10 @@ class RobotPilot:
         while(True):
             time.sleep(0.1)
             angular_change = abs(self.track_imu.get_angular_change())
-            print("Angular change %f" % (angular_change))
+            rospy.loginfo("Angular change %f" % (angular_change))
             if angular_change < 0.17:
                 # Turn isnt happening for whatever reason
-                print("Aborting turn as IMU isnt changing")
+                rospy.loginfo("Aborting turn as IMU isnt changing")
                 return True
             
             if angular_change > turn_angle:
@@ -180,7 +193,7 @@ class RobotPilot:
         self.execute_cmd(RobotState.STOP)
 
     def execute_cmd(self, cmd):
-        print("Executing %s fwd speed: %d" % (cmd, self.forward_speed))
+        rospy.loginfo("Executing %s fwd speed: %d" % (cmd, self.forward_speed))
         self.state_tracker.add(cmd)
         
         if cmd == RobotState.FORWARD:
@@ -194,4 +207,10 @@ class RobotPilot:
         elif cmd == RobotState.STOP:
             self.driver.stop()
             self.reset_forward_speed()
+
+if __name__ == '__main__':
+    rospy.init_node('robot_pilot')
+
+    pilot = RobotPilot()
+    pilot.start()
 

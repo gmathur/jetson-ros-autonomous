@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-import sys
 import rospy
+import sys
 import signal
 import numpy as np
 from threading import Thread
@@ -28,9 +28,6 @@ def angle_between(v1, v2):
 
 class TrackImu:
     def __init__(self):
-        rospy.init_node('listener', anonymous=True)
-        rospy.Subscriber("imu/data", Imu, self.callback)
-        rospy.Subscriber("imu/euler", Vector3, self.euler_callback)
         self.reset_imu = True
         self.reset_euler = True
         self.baseline_imu = None
@@ -75,7 +72,7 @@ class TrackImu:
 
         self.last_euler = data
 
-    def callback(self, data):
+    def imu_callback(self, data):
 #        print(rospy.get_caller_id() + "I heard %s", data)
         if self.reset_imu:
             self.reset_imu = False
@@ -93,7 +90,7 @@ class TrackImu:
            max_imu.linear_acceleration.z >= 0.01:
             return True
         else:
-            print("Returning false for IMU data %s", max_imu)
+            rospy.loginfo("Returning false for IMU data %s" % (max_imu))
             return False
 
     def get_angular_change(self):

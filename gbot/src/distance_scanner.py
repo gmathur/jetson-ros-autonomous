@@ -32,7 +32,7 @@ class DistanceScanner:
         if right_dist < min_dist:
             min_dist = right_dist
     
-        print("Left %d Straight %d Right %d. Min %d" % (left_dist, straight_dist[0],
+        rospy.loginfo("Left %d Straight %d Right %d. Min %d" % (left_dist, straight_dist[0],
             right_dist, min_dist))
 
         return min_dist
