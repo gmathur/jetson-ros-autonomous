@@ -8,6 +8,17 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   sensor_msgs
   ydlidar
+  message_generation
+)
+
+add_message_files(
+  FILES
+  Proximity.msg
+)
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs
 )
 
 catkin_package()
