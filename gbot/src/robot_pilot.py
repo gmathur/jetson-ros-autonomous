@@ -42,11 +42,11 @@ class RobotStates:
 
 class RobotPilot:
     TURN_TIME = 0.6
-    MIN_SPEED = 60 # Multiple of 10
+    MIN_SPEED = 100 # Multiple of 10
     MAX_SPEED = 120 # Multiple of 10
 
     def __init__(self):
-        self.driver = DimensionDriver(128, '/dev/serial0')
+        self.driver = DimensionDriver(128, '/dev/ttyUSB1')
         self.state_tracker = RobotStates()
         self.track_imu = TrackImu()
         self.state_tracker.add(RobotState.STOP)

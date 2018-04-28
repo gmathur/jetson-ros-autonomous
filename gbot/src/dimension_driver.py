@@ -3,6 +3,9 @@ import time
 import serial
 
 class DimensionDriver:
+    MOTOR_1_MULTIPLIER = 1
+    MOTOR_2_MULTIPLIER = 0.8
+
     def __init__(self, address, port):
         self.address = 128
         self.ser = serial.Serial(
@@ -33,21 +36,28 @@ class DimensionDriver:
         self.ser.write(msg)
         self.ser.flush()
 
+    def get_speeds(self, speed):
+        return int(speed * DimensionDriver.MOTOR_1_MULTIPLIER), int(speed * DimensionDriver.MOTOR_2_MULTIPLIER)
+
     def drive_forward(self, speed):
-        self.send_command(0, speed)
-        self.send_command(4, speed)
+        left, right = self.get_speeds(speed)
+        self.send_command(0, left)
+        self.send_command(4, right)
 
     def drive_backward(self, speed):
-        self.send_command(1, speed)
-        self.send_command(5, speed)
+        left, right = self.get_speeds(speed)
+        self.send_command(1, left)
+        self.send_command(5, right)
 
     def turn_right(self, speed):
-        self.send_command(0, speed)
-        self.send_command(5, speed)
+        left, right = self.get_speeds(speed)
+        self.send_command(0, left)
+        self.send_command(5, right)
     
     def turn_left(self, speed):
-        self.send_command(4, speed)
-        self.send_command(1, speed)
+        left, right = self.get_speeds(speed)
+        self.send_command(4, left)
+        self.send_command(1, right)
 
     def stop(self):
         self.drive_forward(0)
@@ -56,7 +66,7 @@ class DimensionDriver:
         self.ser.close()
 
 if __name__== "__main__":
-    driver = DimensionDriver(128, '/dev/ttyUSB0')
+    driver = DimensionDriver(128, '/dev/ttyUSB1')
     driver.open()
     driver.drive_forward(127)
     time.sleep(1)

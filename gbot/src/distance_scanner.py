@@ -20,8 +20,11 @@ class DistanceScanner:
             msg = Proximity()
             msg.stamp = rospy.Time.now()
             msg.left = distances[0]
-            msg.straight = distances[1]
-            msg.right = distances[2]
+            msg.right = distances[1]
+            if distances[0] < distances[1]:
+                msg.straight = distances[0]
+            else:
+                msg.straight = distances[1]
             
             self.pub.publish(msg)
 
