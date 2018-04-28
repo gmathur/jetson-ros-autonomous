@@ -34,18 +34,20 @@ class DimensionDriver:
         self.ser.flush()
 
     def drive_forward(self, speed):
-        self.send_command(13, 64)
-        self.send_command(8, speed)
+        self.send_command(0, speed)
+        self.send_command(4, speed)
 
     def drive_backward(self, speed):
-        self.send_command(13, 64)
-        self.send_command(9, speed)
+        self.send_command(1, speed)
+        self.send_command(5, speed)
 
     def turn_right(self, speed):
-        self.send_command(13, 64 + int(speed/2))
+        self.send_command(0, speed)
+        self.send_command(5, speed)
     
     def turn_left(self, speed):
-        self.send_command(13, 64 - int(speed/2))
+        self.send_command(4, speed)
+        self.send_command(1, speed)
 
     def stop(self):
         self.drive_forward(0)
@@ -54,15 +56,15 @@ class DimensionDriver:
         self.ser.close()
 
 if __name__== "__main__":
-    driver = DimensionDriver(128, '/dev/serial0')
+    driver = DimensionDriver(128, '/dev/ttyUSB0')
     driver.open()
     driver.drive_forward(127)
     time.sleep(1)
     driver.drive_backward(127)
     time.sleep(1)
-    driver.turn_right(50)
+    driver.turn_right(127)
     time.sleep(1)
-    driver.turn_left(50)
+    driver.turn_left(127)
     time.sleep(1)
     driver.stop()
 
