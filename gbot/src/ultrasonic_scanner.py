@@ -4,7 +4,7 @@ import math
 import RPi.GPIO as GPIO
 
 TRIGGER_PIN = 17
-SENSOR_PINS = [27, 22]
+SENSOR_PINS = [22, 27] # left, right
 SAMPLE_WAIT=0.1
 
 class SensorState:

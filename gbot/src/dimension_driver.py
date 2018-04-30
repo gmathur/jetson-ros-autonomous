@@ -3,8 +3,8 @@ import time
 import serial
 
 class DimensionDriver:
-    MOTOR_1_MULTIPLIER = 1
-    MOTOR_2_MULTIPLIER = 0.8
+    MOTOR_1_MULTIPLIER = 0.95
+    MOTOR_2_MULTIPLIER = 1
 
     def __init__(self, address, port):
         self.address = 128
@@ -56,8 +56,8 @@ class DimensionDriver:
     
     def turn_left(self, speed):
         left, right = self.get_speeds(speed)
-        self.send_command(4, left)
-        self.send_command(1, right)
+        self.send_command(1, left)
+        self.send_command(4, right)
 
     def stop(self):
         self.drive_forward(0)
@@ -66,7 +66,7 @@ class DimensionDriver:
         self.ser.close()
 
 if __name__== "__main__":
-    driver = DimensionDriver(128, '/dev/ttyUSB1')
+    driver = DimensionDriver(128, '/dev/ttyUSB0')
     driver.open()
     driver.drive_forward(127)
     time.sleep(1)

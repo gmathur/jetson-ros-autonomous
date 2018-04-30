@@ -42,11 +42,11 @@ class RobotStates:
 
 class RobotPilot:
     TURN_TIME = 0.6
-    MIN_SPEED = 100 # Multiple of 10
-    MAX_SPEED = 120 # Multiple of 10
+    MIN_SPEED = 127 # Multiple of 10
+    MAX_SPEED = 127 # Multiple of 10
 
     def __init__(self):
-        self.driver = DimensionDriver(128, '/dev/ttyUSB1')
+        self.driver = DimensionDriver(128, '/dev/ttyUSB0')
         self.state_tracker = RobotStates()
         self.track_imu = TrackImu()
         self.state_tracker.add(RobotState.STOP)
@@ -73,7 +73,7 @@ class RobotPilot:
 
     def check_for_collision(self, min_dist):
         if self.state_tracker.dist:
-            if self.state_tracker.dist - min_dist > 175:
+            if self.state_tracker.dist - min_dist > 300:
                 rospy.loginfo("Massive reading change (current %d last %d) - possible collision", self.state_tracker.dist, min_dist)
                 return True
 
@@ -104,9 +104,8 @@ class RobotPilot:
             if just_started and not self.track_imu.is_linear_change_significant():
                 rospy.loginfo("No change in IMU readings since starting movement")
                 self.obstacle_encountered()
-            else:
-                self.state_tracker.set_last_dist(min_dist)
-
+            
+        self.state_tracker.set_last_dist(min_dist)
         self.last_execution = time.time()
 
     def obstacle_encountered(self):
@@ -120,12 +119,14 @@ class RobotPilot:
     def reduce_forward_speed(self):
         if self.forward_speed > RobotPilot.MIN_SPEED:
             self.forward_speed -= 10
+            if self.forward_speed < RobotPilot.MIN_SPEED:
+                self.forward_speed = RobotPilot.MIN_SPEED
 
     def increase_forward_speed(self):
         if self.forward_speed < RobotPilot.MAX_SPEED:
             self.forward_speed += 10
-            if self.forward_speed > 127:
-                self.forward_speed = 127
+            if self.forward_speed > RobotPilot.MAX_SPEED:
+                self.forward_speed = RobotPilot.MAX_SPEED
 
     def adjust_speed(self, min_dist):
         if min_dist > 70 or min_dist >= (self.state_tracker.get_last_dist() - 2):
@@ -163,10 +164,10 @@ class RobotPilot:
         self.track_imu.reset()
         #for i in range(0, int(turn_time / 0.1)):
         while(True):
-            time.sleep(0.1)
+            time.sleep(0.2)
             angular_change = abs(self.track_imu.get_angular_change())
             rospy.loginfo("Angular change %f" % (angular_change))
-            if angular_change < 0.17:
+            if angular_change < 0.1:
                 # Turn isnt happening for whatever reason
                 rospy.loginfo("Aborting turn as IMU isnt changing")
                 return True
