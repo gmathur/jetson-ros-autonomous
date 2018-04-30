@@ -42,7 +42,7 @@ class RobotStates:
 
 class RobotPilot:
     TURN_TIME = 0.6
-    MIN_SPEED = 127 # Multiple of 10
+    MIN_SPEED = 97 # Multiple of 10
     MAX_SPEED = 127 # Multiple of 10
 
     def __init__(self):
@@ -73,7 +73,7 @@ class RobotPilot:
 
     def check_for_collision(self, min_dist):
         if self.state_tracker.dist:
-            if self.state_tracker.dist - min_dist > 300:
+            if self.state_tracker.dist - min_dist > 400:
                 rospy.loginfo("Massive reading change (current %d last %d) - possible collision", self.state_tracker.dist, min_dist)
                 return True
 
@@ -81,7 +81,7 @@ class RobotPilot:
 
     def proximity_callback(self, data):
         if data.stamp.secs < rospy.Time.now().secs - 2:
-            rospy.loginfo("Skipping old message")
+            rospy.loginfo("ALERT: Getting only old IMU messages. Stopping!!!!!!!")
             self.execute_cmd(RobotState.STOP)
             return
 
@@ -164,7 +164,7 @@ class RobotPilot:
         self.track_imu.reset()
         #for i in range(0, int(turn_time / 0.1)):
         while(True):
-            time.sleep(0.2)
+            time.sleep(0.1)
             angular_change = abs(self.track_imu.get_angular_change())
             rospy.loginfo("Angular change %f" % (angular_change))
             if angular_change < 0.1:
@@ -172,10 +172,11 @@ class RobotPilot:
                 rospy.loginfo("Aborting turn as IMU isnt changing")
                 return True
             
-            if angular_change > turn_angle:
+            if angular_change >= turn_angle:
                 return False
 
-            if (time.time() - start_time) > 2 * 1000:
+            # If the turn is taking longer than 2 seconds abort
+            if (time.time() - start_time) > 2:
                 return True
 
     def turn_left(self, turn_time = TURN_TIME):
