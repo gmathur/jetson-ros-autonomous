@@ -4,7 +4,7 @@
 
   #### Start MPU 9255 driver ###########
 
-  <node pkg="i2c_imu" type="i2c_imu_node" name="i2c_imu" output="screen" required="true">
+  <node pkg="i2c_imu" type="i2c_imu_node" name="i2c_imu" output="screen">
       <rosparam file="$(find i2c_imu)/param/imu.yaml"/>
   </node>
 

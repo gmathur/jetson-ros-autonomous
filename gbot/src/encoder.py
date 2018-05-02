@@ -40,14 +40,14 @@ class EncoderCounter:
 
     def publish(self):
         counter = Int16(self.count)
-        pub.publish(counter)
+        self.pub.publish(counter)
 
 class RobotEncoderController:
-    def __init__(self, lencoder, rencoder):
+    def __init__(self):
         self.pi = pigpio.pi()
 
-        self.lencoder = EncoderCounter(pi, 23, 'lwheel')
-        self.rencoder = EncoderCounter(pi, 24, 'rwheel')
+        self.lencoder = EncoderCounter(self.pi, 23, 'lwheel')
+        self.rencoder = EncoderCounter(self.pi, 24, 'rwheel')
 
     def set_state(self, state):
         if state == RobotState.FORWARD:
@@ -66,7 +66,7 @@ class RobotEncoderController:
         self.lencoder.publish()
         self.rencoder.publish()
 
-    def close(self):
+    def stop(self):
         self.pi.stop()
 
     def spin(self):    
@@ -85,4 +85,4 @@ if __name__ == "__main__":
     except KeyboardInterrupt:  # When 'Ctrl+C' is pressed, the child program destroy() will be  executed.
         pass
 
-    controller.close()
+    controller.stop()

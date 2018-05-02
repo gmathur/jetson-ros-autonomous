@@ -3,11 +3,16 @@ import rospy
 import time
 from encoder import RobotEncoderController
 from track_imu import TrackImu
-from robot_state import RobotState, CommandSource
+from robot_state import RobotState, CommandSource, RobotStateTracker
+from speed_tracker import SpeedTracker
 
 class Driver:
+    TURN_TIME = 0.6
+
     def __init__(self, dimension_driver):
         self.driver = dimension_driver
+        self.speed_tracker = SpeedTracker()
+        self.state_tracker = RobotStateTracker()
         self.encoder_controller = RobotEncoderController()
         self.track_imu = TrackImu()
 
@@ -40,7 +45,7 @@ class Driver:
         self.execute_cmd(RobotState.STOP)
 
     def execute_cmd(self, cmd):
-        rospy.loginfo("Executing %s fwd speed: %d" % (cmd, self.forward_speed))
+        rospy.loginfo("Executing %s fwd speed: %d" % (cmd, self.speed_tracker.forward_speed))
         self.state_tracker.add(cmd)
         
         self.encoder_controller.set_state(cmd)

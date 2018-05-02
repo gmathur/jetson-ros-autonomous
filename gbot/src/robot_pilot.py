@@ -8,56 +8,23 @@ from robot_state import RobotState, CommandSource
 from track_imu import TrackImu
 from gbot.msg import Proximity
 from sensor_msgs.msg import Imu
-from sensor_msgs.msg import Vector3
+from geometry_msgs.msg import Vector3
 from std_msgs.msg import Int16
-from geometry_msgs.msg import LaserScan
-from speed_tracker import SpeedTracker
+from sensor_msgs.msg import LaserScan
 from driver import Driver
-
-class RobotStates:
-    def __init__(self):
-        self.states = [RobotState.STOP]
-        self.dist = 0
-
-    def add(self, state):
-        if state == RobotState.STOP and len(self.states) > 0 and \
-                self.states[len(self.states)-1] == state:
-            # Dont store multiple STOP states in the list
-            return
-
-        self.states.append(state)
-        if len(self.states) > 4:
-            self.states.pop(0)
-
-    def check_state_exists(self, state):
-        return state in self.states
-
-    def get_last_state(self):
-        if len(self.states) == 0:
-            return None
-        else:
-            return self.states[len(self.states)-1]
-
-    def set_last_dist(self, dist):
-        self.dist = dist
-
-    def get_last_dist(self):
-        return self.dist
 
 class AutoPilot:
     def __init__(self, driver):
         self.driver = driver
-        self.state_tracker = RobotStates()
-        self.speed_tracker = SpeedTracker()
         self.last_execution = time.time() - 100000
         
         rospy.Subscriber("proximity", Proximity, self.proximity_callback, queue_size=1)
         rospy.Subscriber("scan", LaserScan, self.scan_callback, queue_size=1)
 
     def check_for_collision(self, min_dist):
-        if self.state_tracker.dist:
-            if self.state_tracker.dist - min_dist > 300:
-                rospy.loginfo("Massive reading change (current %d last %d) - possible collision", self.state_tracker.dist, min_dist)
+        if self.driver.state_tracker.dist:
+            if self.driver.state_tracker.dist - min_dist > 300:
+                rospy.loginfo("Massive reading change (current %d last %d) - possible collision", self.driver.state_tracker.dist, min_dist)
                 return True
 
         return False
@@ -81,34 +48,34 @@ class AutoPilot:
         if min_dist <= 25 or self.check_for_collision(min_dist):
             self.obstacle_encountered()
         else:
-            just_started = len(self.state_tracker.states) == 2 or self.state_tracker.get_last_state() == RobotState.STOP
+            just_started = len(self.driver.state_tracker.states) == 2 or self.driver.state_tracker.get_last_state() == RobotState.STOP
             self.driver.track_imu.reset()
-            self.speed_tracker.adjust_speed(min_dist, self.state_tracker.get_last_dist())
+            self.driver.speed_tracker.adjust_speed(min_dist, self.driver.state_tracker.get_last_dist())
             self.driver.forward()
             time.sleep(0.2)
 
-            if just_started and not self.pilot.track_imu.is_linear_change_significant():
+            if just_started and not self.driver.track_imu.is_linear_change_significant():
                 rospy.loginfo("No change in IMU readings since starting movement")
                 self.obstacle_encountered()
             
-        self.state_tracker.set_last_dist(min_dist)
+        self.driver.state_tracker.set_last_dist(min_dist)
         self.last_execution = time.time()
 
     def obstacle_encountered(self):
         self.driver.stop()
-        self.state_tracker.set_last_dist(0)
+        self.driver.state_tracker.set_last_dist(0)
         self.check_obstacles()
 
     def check_obstacles(self):
         # If last state was not turn right - turn right & scan
-        if not self.state_tracker.check_state_exists(RobotState.RIGHT):
+        if not self.driver.state_tracker.check_state_exists(RobotState.RIGHT):
             self.driver.turn_right()
             return
-        elif not self.state_tracker.check_state_exists(RobotState.LEFT):
+        elif not self.driver.state_tracker.check_state_exists(RobotState.LEFT):
             # Else if last state was not turn left - turn left + left & scan
-            self.driver.turn_left(turn_time=2 * RobotPilot.TURN_TIME)
+            self.driver.turn_left(turn_time=2 * Driver.TURN_TIME)
             return
-        elif not self.state_tracker.check_state_exists(RobotState.REVERSE):
+        elif not self.driver.state_tracker.check_state_exists(RobotState.REVERSE):
             # Tried turning right and left. So we are wedged - back out
             self.driver.reverse()
         
@@ -144,16 +111,15 @@ class ManualPilot:
                 self.driver.send_command(5, data)
 
 
-class RobotPilot:
-    TURN_TIME = 0.6
-   
+class PilotInit:
     def __init__(self):
-        self.dimension_driver = DimensionDriver(128, '/dev/ttyUSB0')
-        self.driver = Driver()
+        self.dimension_driver = DimensionDriver(128, '/dev/ttyUSB1')
+        self.driver = Driver(self.dimension_driver)
         self.auto_pilot = AutoPilot(self.driver)
+        
         self.manual_pilot = ManualPilot(self.dimension_driver)
         
-    def open(self)
+    def open(self):
         self.driver.open()
 
     def start(self):
@@ -167,7 +133,7 @@ class RobotPilot:
 if __name__ == '__main__':
     rospy.init_node('robot_pilot')
 
-    pilot = RobotPilot()
+    pilot = PilotInit()
     try:
         pilot.open()
         pilot.start()

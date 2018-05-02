@@ -66,7 +66,7 @@ class DimensionDriver:
         self.ser.close()
 
 if __name__== "__main__":
-    driver = DimensionDriver(128, '/dev/ttyUSB0')
+    driver = DimensionDriver(128, '/dev/ttyUSB1')
     driver.open()
     driver.drive_forward(127)
     time.sleep(1)
