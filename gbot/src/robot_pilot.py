@@ -9,6 +9,7 @@ from track_imu import TrackImu
 from gbot.msg import Proximity
 from sensor_msgs.msg import Imu
 from geometry_msgs.msg import Vector3
+from encoder import RobotEncoderController
 
 class RobotStates:
     def __init__(self):
@@ -47,6 +48,7 @@ class RobotPilot:
 
     def __init__(self):
         self.driver = DimensionDriver(128, '/dev/ttyUSB0')
+        self.encoder_controller = RobotEncoderController()
         self.state_tracker = RobotStates()
         self.track_imu = TrackImu()
         self.state_tracker.add(RobotState.STOP)
@@ -63,9 +65,10 @@ class RobotPilot:
         self.driver.open()
 
     def start(self):
-        rospy.spin()
+        self.encoder_controller.spin()
 
     def close(self):
+        self.encoder_controller.stop()
         self.driver.stop()
         self.state_tracker.add(RobotState.STOP)
 
@@ -196,6 +199,8 @@ class RobotPilot:
     def execute_cmd(self, cmd):
         rospy.loginfo("Executing %s fwd speed: %d" % (cmd, self.forward_speed))
         self.state_tracker.add(cmd)
+        
+        self.encoder_controller.set_state(cmd)
         
         if cmd == RobotState.FORWARD:
             self.driver.drive_forward(self.forward_speed)
