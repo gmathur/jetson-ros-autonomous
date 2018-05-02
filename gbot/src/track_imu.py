@@ -35,6 +35,9 @@ class TrackImu:
         self.last_euler = None
         self.last_imu = None
 
+        rospy.Subscriber("imu/data", Imu, self.imu_callback, queue_size=1)
+        rospy.Subscriber("imu/euler", Vector3, self.euler_callback, queue_size=1)
+
     def reset(self):
         self.reset_imu = True
         self.reset_euler = True

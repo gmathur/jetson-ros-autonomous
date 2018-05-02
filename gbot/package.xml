@@ -2,12 +2,12 @@
 <package>
   <name>gbot</name>
   <version>1.2.1</version>
-  <description>The ydlidar package</description>
+  <description>The Gbot package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->
   <!-- <maintainer email="jane.doe@example.com">Jane Doe</maintainer> -->
-  <maintainer email="shao@hahabot.com">shao</maintainer>
+  <maintainer email="g@gmathur.com">Gaurav</maintainer>
 
 
   <!-- One license tag required, multiple allowed, one license per tag -->
