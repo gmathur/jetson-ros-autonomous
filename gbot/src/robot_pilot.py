@@ -10,6 +10,7 @@ from gbot.msg import Proximity
 from sensor_msgs.msg import Imu
 from geometry_msgs.msg import Vector3
 from encoder import RobotEncoderController
+from speed_tracker import SpeedTracker
 
 class RobotStates:
     def __init__(self):
@@ -41,21 +42,18 @@ class RobotStates:
     def get_last_dist(self):
         return self.dist
 
+
 class RobotPilot:
     TURN_TIME = 0.6
-    MIN_SPEED = 127 # Multiple of 10
-    MAX_SPEED = 127 # Multiple of 10
-
+   
     def __init__(self):
         self.driver = DimensionDriver(128, '/dev/ttyUSB0')
         self.encoder_controller = RobotEncoderController()
+        self.speed_tracker = SpeedTracker()
         self.state_tracker = RobotStates()
         self.track_imu = TrackImu()
         self.state_tracker.add(RobotState.STOP)
-        self.reset_forward_speed()
-        self.reverse_speed = 100
-        self.turn_speed = 80
-
+        
         rospy.Subscriber("proximity", Proximity, self.proximity_callback, queue_size=1)
         rospy.Subscriber("imu/data", Imu, self.track_imu.imu_callback, queue_size=1)
         rospy.Subscriber("imu/euler", Vector3, self.track_imu.euler_callback, queue_size=1)
@@ -100,7 +98,7 @@ class RobotPilot:
         else:
             just_started = len(self.state_tracker.states) == 2 or self.state_tracker.get_last_state() == RobotState.STOP
             self.track_imu.reset()
-            self.adjust_speed(min_dist)
+            self.speed_tracker.adjust_speed(min_dist, self.state_tracker.get_last_dist())
             self.forward()
             time.sleep(0.2)
 
@@ -115,29 +113,6 @@ class RobotPilot:
         self.execute_cmd(RobotState.STOP)
         self.state_tracker.set_last_dist(0)
         self.check_obstacles()
-
-    def reset_forward_speed(self):
-        self.forward_speed = RobotPilot.MIN_SPEED
-
-    def reduce_forward_speed(self):
-        if self.forward_speed > RobotPilot.MIN_SPEED:
-            self.forward_speed -= 10
-            if self.forward_speed < RobotPilot.MIN_SPEED:
-                self.forward_speed = RobotPilot.MIN_SPEED
-
-    def increase_forward_speed(self):
-        if self.forward_speed < RobotPilot.MAX_SPEED:
-            self.forward_speed += 10
-            if self.forward_speed > RobotPilot.MAX_SPEED:
-                self.forward_speed = RobotPilot.MAX_SPEED
-
-    def adjust_speed(self, min_dist):
-        if min_dist > 70 or min_dist >= (self.state_tracker.get_last_dist() - 2):
-            self.increase_forward_speed()
-            rospy.loginfo("min dist: %d, last dist %d, Increased speed to %d" % (min_dist, self.state_tracker.get_last_dist(), self.forward_speed))
-        else:
-            self.reduce_forward_speed()
-            rospy.loginfo("min dist: %d, last dist %d. Decreased speed to %d" % (min_dist, self.state_tracker.get_last_dist(), self.forward_speed))
 
     def check_obstacles(self):
         # If last state was not turn right - turn right & scan
@@ -178,7 +153,7 @@ class RobotPilot:
             if angular_change > turn_angle:
                 return False
 
-            if (time.time() - start_time) > 2 * 1000:
+            if (time.time() - start_time) > 2:
                 return True
 
     def turn_left(self, turn_time = TURN_TIME):
@@ -203,16 +178,16 @@ class RobotPilot:
         self.encoder_controller.set_state(cmd)
         
         if cmd == RobotState.FORWARD:
-            self.driver.drive_forward(self.forward_speed)
+            self.driver.drive_forward(self.speed_tracker.forward_speed)
         elif cmd == RobotState.REVERSE:
-            self.driver.drive_backward(self.reverse_speed)
+            self.driver.drive_backward(self.speed_tracker.reverse_speed)
         elif cmd == RobotState.LEFT:
-            self.driver.turn_left(self.turn_speed)
+            self.driver.turn_left(self.speed_tracker.turn_speed)
         elif cmd == RobotState.RIGHT:
-            self.driver.turn_right(self.turn_speed)
+            self.driver.turn_right(self.speed_tracker.turn_speed)
         elif cmd == RobotState.STOP:
             self.driver.stop()
-            self.reset_forward_speed()
+            self.speed_tracker.reset_forward_speed()
 
 if __name__ == '__main__':
     rospy.init_node('robot_pilot')
