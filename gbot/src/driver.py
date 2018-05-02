@@ -7,7 +7,7 @@ from robot_state import RobotState, CommandSource, RobotStateTracker
 from speed_tracker import SpeedTracker
 
 class Driver:
-    TURN_TIME = 0.6
+    TURN_TIME_PER_RADIAN = 0.318
 
     def __init__(self, dimension_driver):
         self.driver = dimension_driver
@@ -26,22 +26,22 @@ class Driver:
     def forward(self):
         self.execute_cmd(RobotState.FORWARD)
 
-    def turn_left(self, turn_time = TURN_TIME):
+    def turn_left(self):
         self.turn_angle(1.57 + 3.142)
 
-    def turn_right(self, turn_time = TURN_TIME):
+    def turn_right(self):
         self.turn_angle(1.57)
 
     def turn_angle(self, angle):
         if angle <= 3.142:
             # Turn right
             self.execute_cmd(RobotState.RIGHT)
-            self.track_angular_imu_for_time(turn_angle=angle)
+            self.track_angular_change(turn_angle=angle)
             self.execute_cmd(RobotState.STOP)
         else:
             # Turn left
             self.execute_cmd(RobotState.LEFT)
-            self.track_angular_imu_for_time(turn_angle=angle - 3.142)
+            self.track_angular_change(turn_angle=angle - 3.142)
             self.execute_cmd(RobotState.STOP)
 
     def reverse(self):
@@ -70,7 +70,20 @@ class Driver:
             self.driver.stop()
             self.speed_tracker.reset_forward_speed()
 
-    def track_angular_imu_for_time(self, turn_angle=1.57):
+    def track_angular_change(self, turn_angle=1.57):
+        if self.track_imu.should_use_imu():
+            rospy.loginfo("Tracking IMU change for turns")
+            self.track_imu_for_angular_change(turn_angle)
+        else:
+            rospy.logwarn("IMU data not available - falling back to time based turns")
+            self.track_time_for_angular_change(turn_angle)
+
+    def track_time_for_angular_change(self, turn_angle=1.57):
+        sleep_time = TURN_TIME_PER_RADIAN * turn_angle
+        sleep_time = 0.1 if sleep_time < 0.1 else sleep_time
+        time.sleep(sleep_time)
+
+    def track_imu_for_angular_change(self, turn_angle=1.57):
         start_time = time.time()
 
         self.track_imu.reset()

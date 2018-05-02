@@ -58,7 +58,8 @@ class AutoPilot:
     def check_for_collision(self, min_dist):
         if self.driver.state_tracker.dist:
             if self.driver.state_tracker.dist - min_dist > 300:
-                rospy.loginfo("Massive reading change (current %d last %d) - possible collision", self.driver.state_tracker.dist, min_dist)
+                rospy.loginfo("Massive reading change (current %d last %d) - possible collision",
+                        self.driver.state_tracker.dist, min_dist)
                 return True
 
         return False
@@ -108,7 +109,7 @@ class AutoPilot:
             rospy.loginfo("Using laser scan to find where to go.")
             self.process_laser_scan()
         else:
-            rospy.loginfo("Ignoring old laser scan message.")
+            rospy.logwarn("Laser scan data not available - falling back to proximity data")
             self.process_proximity()
 
     def process_proximity(self):
@@ -118,7 +119,7 @@ class AutoPilot:
             return
         elif not self.driver.state_tracker.check_state_exists(RobotState.LEFT):
             # Else if last state was not turn left - turn left + left & scan
-            self.driver.turn_left(turn_time=2 * Driver.TURN_TIME)
+            self.driver.turn_angle(3.14)
             return
         elif not self.driver.state_tracker.check_state_exists(RobotState.REVERSE):
             # Tried turning right and left. So we are wedged - back out
