@@ -101,3 +101,10 @@ class TrackImu:
             return 0.0
         return angle_between((self.baseline_euler.x, self.baseline_euler.y, 0),
             (self.last_euler.x, self.last_euler.y, 0))
+
+    def should_use_imu(self):
+        if self.last_imu and self.last_imu.header.stamp.secs >= rospy.Time.now().secs - 1:
+            return True
+        else:
+            return False
+

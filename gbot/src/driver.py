@@ -27,14 +27,22 @@ class Driver:
         self.execute_cmd(RobotState.FORWARD)
 
     def turn_left(self, turn_time = TURN_TIME):
-        self.execute_cmd(RobotState.LEFT)
-        self.track_angular_imu_for_time(turn_time)
-        self.execute_cmd(RobotState.STOP)
+        self.turn_angle(1.57 + 3.142)
 
     def turn_right(self, turn_time = TURN_TIME):
-        self.execute_cmd(RobotState.RIGHT)
-        self.track_angular_imu_for_time(turn_time)
-        self.execute_cmd(RobotState.STOP)
+        self.turn_angle(1.57)
+
+    def turn_angle(self, angle):
+        if angle <= 3.142:
+            # Turn right
+            self.execute_cmd(RobotState.RIGHT)
+            self.track_angular_imu_for_time(turn_angle=angle)
+            self.execute_cmd(RobotState.STOP)
+        else:
+            # Turn left
+            self.execute_cmd(RobotState.LEFT)
+            self.track_angular_imu_for_time(turn_angle=angle - 3.142)
+            self.execute_cmd(RobotState.STOP)
 
     def reverse(self):
         self.execute_cmd(RobotState.REVERSE)
@@ -62,7 +70,7 @@ class Driver:
             self.driver.stop()
             self.speed_tracker.reset_forward_speed()
 
-    def track_angular_imu_for_time(self, turn_time, turn_angle=1.57):
+    def track_angular_imu_for_time(self, turn_angle=1.57):
         start_time = time.time()
 
         self.track_imu.reset()
