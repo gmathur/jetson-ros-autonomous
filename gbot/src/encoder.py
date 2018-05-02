@@ -11,7 +11,7 @@ class EncoderCounter:
         self.count = 0
 
         self.pi.set_mode(pin, pigpio.INPUT)
-        self.pi.set_pull_up_down(pin, pigpio.PUD_UP)
+        self.pi.set_pull_up_down(pin, pigpio.PUD_DOWN)
         self.pi.callback(pin, pigpio.RISING_EDGE, self.detect)
         print("init")
 
