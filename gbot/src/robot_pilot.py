@@ -3,11 +3,13 @@ import rospy
 import random
 import threading
 import time
+from dimension_driver import DimensionDriver
 from robot_state import RobotState, CommandSource
 from track_imu import TrackImu
 from gbot.msg import Proximity
 from sensor_msgs.msg import Imu
 from sensor_msgs.msg import Vector3
+from std_msgs.msg import Int16
 from geometry_msgs.msg import LaserScan
 from speed_tracker import SpeedTracker
 from driver import Driver
@@ -48,6 +50,9 @@ class AutoPilot:
         self.state_tracker = RobotStates()
         self.speed_tracker = SpeedTracker()
         self.last_execution = time.time() - 100000
+        
+        rospy.Subscriber("proximity", Proximity, self.proximity_callback, queue_size=1)
+        rospy.Subscriber("scan", LaserScan, self.scan_callback, queue_size=1)
 
     def check_for_collision(self, min_dist):
         if self.state_tracker.dist:
@@ -113,19 +118,42 @@ class AutoPilot:
         else:
             self.driver.turn_right()
 
+class ManualPilot:
+    def __init__(self, driver):
+        self.driver = driver
+        
+        rospy.Subscriber("lmotor", Int16, self.lmotor_callback, queue_size=1)
+        rospy.Subscriber("rmotor", Int16, self.rmotor_callback, queue_size=1)
+
+    def lmotor_callback(self, data):
+        self.process(1, data)
+
+    def rmotor_callback(self, data):
+        self.process(2, data)
+
+    def process(self, motor_num, data):
+        if motor_num == 1:
+            if data >= 0:
+                self.driver.send_command(0, data)
+            else:
+                self.driver.send_command(4, data)
+        else:
+            if data >= 0:
+                self.driver.send_command(0, data)
+            else:
+                self.driver.send_command(5, data)
+
+
 class RobotPilot:
     TURN_TIME = 0.6
    
     def __init__(self):
+        self.dimension_driver = DimensionDriver(128, '/dev/ttyUSB0')
         self.driver = Driver()
-        self.obstacle_avoidance = AutoPilot(self.driver)
+        self.auto_pilot = AutoPilot(self.driver)
+        self.manual_pilot = ManualPilot(self.dimension_driver)
         
-        rospy.Subscriber("proximity", Proximity, self.proximity_callback, queue_size=1)
-        rospy.Subscriber("imu/data", Imu, self.track_imu.imu_callback, queue_size=1)
-        rospy.Subscriber("imu/euler", Vector3, self.track_imu.euler_callback, queue_size=1)
-        rospy.Subscriber("scan", LaserScan, self.obstacle_avoidance.scan_callback, queue_size=1)
-
-    def open(self):
+    def open(self)
         self.driver.open()
 
     def start(self):
@@ -133,7 +161,7 @@ class RobotPilot:
 
     def close(self):
         self.driver.stop()
-        self.driver.close()
+        self.dimension_driver.stop()
 
     
 if __name__ == '__main__':

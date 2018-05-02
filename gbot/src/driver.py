@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 import rospy
 import time
-from dimension_driver import DimensionDriver
 from encoder import RobotEncoderController
 from track_imu import TrackImu
 from robot_state import RobotState, CommandSource
 
 class Driver:
-    def __init__(self):
-        self.driver = DimensionDriver(128, '/dev/ttyUSB0')
+    def __init__(self, dimension_driver):
+        self.driver = dimension_driver
         self.encoder_controller = RobotEncoderController()
         self.track_imu = TrackImu()
 
@@ -18,9 +17,6 @@ class Driver:
 
     def spin(self):
         self.encoder_controller.spin()
-
-    def close(self):
-        self.driver.stop()
 
     def forward(self):
         self.execute_cmd(RobotState.FORWARD)
