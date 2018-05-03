@@ -8,7 +8,6 @@ find_package(catkin REQUIRED COMPONENTS
     rospy
     sensor_msgs
     rosconsole
-    ydlidar
     message_generation
 )
 
