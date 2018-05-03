@@ -79,7 +79,7 @@ class Driver:
             self.track_time_for_angular_change(turn_angle)
 
     def track_time_for_angular_change(self, turn_angle=1.57):
-        sleep_time = TURN_TIME_PER_RADIAN * turn_angle
+        sleep_time = Driver.TURN_TIME_PER_RADIAN * turn_angle
         sleep_time = 0.1 if sleep_time < 0.1 else sleep_time
         time.sleep(sleep_time)
 

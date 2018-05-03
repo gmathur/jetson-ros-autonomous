@@ -5,8 +5,8 @@ class ManualPilot:
     def __init__(self, driver):
         self.driver = driver
         
-        rospy.Subscriber("lmotor", Int16, self.lmotor_callback, queue_size=1)
-        rospy.Subscriber("rmotor", Int16, self.rmotor_callback, queue_size=1)
+#        rospy.Subscriber("lmotor", Int16, self.lmotor_callback, queue_size=1)
+#        rospy.Subscriber("rmotor", Int16, self.rmotor_callback, queue_size=1)
 
     def lmotor_callback(self, data):
         self.process(1, data)

@@ -6,7 +6,7 @@ import time
 from robot_state import RobotState
 from gbot.msg import Proximity
 from sensor_msgs.msg import LaserScan
-from numpy import median
+import numpy
 
 MARGIN = 0.1
 MIN_DIST = 0.3
@@ -17,6 +17,7 @@ class ContiguousScanPoints:
         self.pts = []
         self.start_angle = -1
         self.end_angle = -1
+        self.median = None
 
     def add(self, pt, angle):
         if len(self.pts) == 0:
@@ -36,9 +37,9 @@ class ContiguousScanPoints:
     def num(self):
         return len(self.pts)
 
-    def median(self):
+    def get_median(self):
         if self.median is None:
-            self.median = median(self.pts)
+            self.median = numpy.median(self.pts)
 
         return self.median
 
@@ -93,7 +94,8 @@ class AutoPilot:
             self.driver.forward()
             time.sleep(0.2)
 
-            if just_started and not self.driver.track_imu.is_linear_change_significant():
+            if just_started and self.driver.track_imu.should_use_imu() and \
+                    not self.driver.track_imu.is_linear_change_significant():
                 rospy.loginfo("No change in IMU readings since starting movement")
                 self.obstacle_encountered()
             
@@ -142,7 +144,7 @@ class AutoPilot:
         current_angle = 2 * 3.142 # Our laser scanner is mounted 180 degree opposite
         
         # Find all contiguous points
-        for dist in self.last_laser_scan.ranges:
+        for pt in self.last_laser_scan.ranges:
             current_angle = (current_angle + angle_per_pt) % (2 * 3.142) # Our laser scanner is mounted 180 
                                                                          # degree opposite to robot frame of ref
             if pt < self.last_laser_scan.range_min or pt > self.last_laser_scan.range_max:
@@ -155,16 +157,16 @@ class AutoPilot:
                 contiguous_pts.append(new_contiguous_pts)
 
         # Clean up the contiguous pts
-        self.contiguous_pts = [ptset for ptset in self.contiguous_pts \
-                                if ptset.num() > 5 and ptset.median() >= MIN_DIST]
+        contiguous_pts = [ptset for ptset in contiguous_pts \
+                                if ptset.num() > 5 and ptset.get_median() >= MIN_DIST]
 
         # Now look for largest pts
-        self.contiguous_pts = sorted(self.contiguous_pts, key=lambda item: item.median(), reverse=True)
+        contiguous_pts = sorted(contiguous_pts, key=lambda item: item.get_median(), reverse=True)
         
         # Pick the largest one that is not right behind
         angle = 0
-        for ptset in self.contiguous_pts:
-            current_median = ptset.median()
+        for ptset in contiguous_pts:
+            current_median = ptset.get_median()
             if current_median >= 3 and current_median <= 3.28:
                 continue
             else:
@@ -175,8 +177,9 @@ class AutoPilot:
             self.drive.reverse()
             self.random_turn()
         else:
-            rospy.loginfo("Turning towards %f", angle)
+            print angle
+            rospy.loginfo("Based on laser scans, turning towards %f", angle)
 
             # Turn in that direction
-            self.drive.turn_angle(angle)
+            self.driver.turn_angle(angle)
 
