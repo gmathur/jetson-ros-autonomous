@@ -27,13 +27,14 @@ def angle_between(v1, v2):
     return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
 
 class TrackImu:
-    def __init__(self):
+    def __init__(self, driver):
         self.reset_imu = True
         self.reset_euler = True
         self.baseline_imu = None
         self.baseline_euler = None
         self.last_euler = None
         self.last_imu = None
+        self.driver = driver
 
         rospy.Subscriber("imu/data", Imu, self.imu_callback, queue_size=1)
         rospy.Subscriber("imu/euler", Vector3, self.euler_callback, queue_size=1)
@@ -68,6 +69,13 @@ class TrackImu:
 
         return changed
 
+    def do_emergency_checks(self, data):
+        if (data.orientation.z < 0 and data.orientation.z > -0.58) or \
+                (data.orientation.z > 0 and data.orientation.z < 0.58):
+            rospy.logerr("********************** EMERGENCY STOP! Imu orientation.z %f **********************",
+                    data.orientation.z)
+            self.driver.emergency_stop()
+
     def euler_callback(self, data):
         if self.reset_euler:
             self.reset_euler = False
@@ -76,7 +84,9 @@ class TrackImu:
         self.last_euler = data
 
     def imu_callback(self, data):
-#        print(rospy.get_caller_id() + "I heard %s", data)
+        # Do emergency checks
+        self.do_emergency_checks(data)
+
         if self.reset_imu:
             self.reset_imu = False
             self.baseline_imu = data

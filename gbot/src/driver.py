@@ -14,7 +14,8 @@ class Driver:
         self.speed_tracker = SpeedTracker()
         self.state_tracker = RobotStateTracker()
         self.encoder_controller = RobotEncoderController()
-        self.track_imu = TrackImu()
+        self.track_imu = TrackImu(self)
+        self.emergency_stop = False
 
     def open(self):
         self.encoder_controller.stop()
@@ -24,6 +25,10 @@ class Driver:
         self.encoder_controller.spin()
 
     def forward(self):
+        if self.emergency_stop:
+            rospy.logerr("Emergency stop. Ignoring forward command")
+            return
+
         self.execute_cmd(RobotState.FORWARD)
 
     def turn_left(self):
@@ -33,6 +38,10 @@ class Driver:
         self.turn_angle(1.57)
 
     def turn_angle(self, angle):
+        if self.emergency_stop:
+            rospy.logerr("Emergency stop. Ignoring turn %f command", angle)
+            return
+
         if angle <= 3.142:
             # Turn right
             self.execute_cmd(RobotState.RIGHT)
@@ -45,12 +54,20 @@ class Driver:
             self.execute_cmd(RobotState.STOP)
 
     def reverse(self):
+        if self.emergency_stop:
+            rospy.logerr("Emergency stop. Ignoring reverse command")
+            return
+        
         self.execute_cmd(RobotState.REVERSE)
         time.sleep(1)
         self.execute_cmd(RobotState.STOP)
 
     def stop(self):
         self.execute_cmd(RobotState.STOP)
+
+    def emergency_stop(self):
+        self.stop()
+        self.emergency_stop = True
 
     def execute_cmd(self, cmd):
         rospy.loginfo("Executing %s fwd speed: %d" % (cmd, self.speed_tracker.forward_speed))
