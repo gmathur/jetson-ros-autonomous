@@ -102,8 +102,8 @@ class LaserScanProcessor:
         angle_per_pt = (2 * 3.142) / len(scan.ranges)
         current_angle = 0
         for i in range(len(scan.ranges)):
-            if current_angle >= (avg_angle - 1) and current_angle <= (avg_angle + 1):
-                scan.ranges[i] = median_dist
+            if current_angle >= (avg_angle - 0.25) and current_angle <= (avg_angle + 0.25):
+                scan.ranges[i] = median_dist + (i * 0.01)
                 scan.intensities[i] = 10.0
             
             current_angle += angle_per_pt
