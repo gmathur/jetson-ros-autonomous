@@ -6,50 +6,13 @@ import time
 from robot_state import RobotState
 from gbot.msg import Proximity
 from sensor_msgs.msg import LaserScan
-import numpy
-
-MARGIN = 0.1
-MIN_DIST = 0.3
-
-class ContiguousScanPoints:
-
-    def __init__(self):
-        self.pts = []
-        self.start_angle = -1
-        self.end_angle = -1
-        self.median = None
-
-    def add(self, pt, angle):
-        if len(self.pts) == 0:
-            self.pts.append(pt)
-            self.start_angle = angle
-            return True
-        
-        last_pt = self.pts[len(self.pts)-1]
-        if pt <= last_pt + (last_pt * MARGIN) and \
-           pt >= last_pt - (last_pt * MARGIN):
-            self.pts.append(pt)
-            return True
-        else:
-            self.end_angle = angle
-            return False
-
-    def num(self):
-        return len(self.pts)
-
-    def get_median(self):
-        if self.median is None:
-            self.median = numpy.median(self.pts)
-
-        return self.median
-
-    def get_angle(self):
-        return (self.start_angle + self.end_angle) / 2.0
+from laser_scan_processor import LaserScanProcessor
 
 class AutoPilot:
     def __init__(self, driver):
         self.driver = driver
         self.last_execution = time.time() - 100000
+        self.laser_scan_processor = LaserScanProcessor()
         
         rospy.Subscriber("proximity", Proximity, self.proximity_callback, queue_size=1)
         rospy.Subscriber("scan", LaserScan, self.scan_callback, queue_size=1)
@@ -137,43 +100,12 @@ class AutoPilot:
             self.driver.turn_right()
 
     def process_laser_scan(self):
-        contiguous_pts = [ContiguousScanPoints()]
-
-        # Find largest distance in scan
-        angle_per_pt = (2 * 3.142) / len(self.last_laser_scan.ranges)
-        current_angle = 2 * 3.142 # Our laser scanner is mounted 180 degree opposite
-        
-        # Find all contiguous points
-        for pt in self.last_laser_scan.ranges:
-            current_angle = (current_angle + angle_per_pt) % (2 * 3.142) # Our laser scanner is mounted 180 
-                                                                         # degree opposite to robot frame of ref
-            if pt < self.last_laser_scan.range_min or pt > self.last_laser_scan.range_max:
-                rospy.logdebug("Skipping laser pt at %f", current_angle)
-                continue
-
-            if not contiguous_pts[len(contiguous_pts)-1].add(pt, current_angle):
-                new_contiguous_pts = ContiguousScanPoints()
-                new_contiguous_pts.add(pt, current_angle)
-                contiguous_pts.append(new_contiguous_pts)
-
-        # Clean up the contiguous pts
-        contiguous_pts = [ptset for ptset in contiguous_pts \
-                                if ptset.num() > 5 and ptset.get_median() >= MIN_DIST]
-
-        # Now look for largest pts
-        contiguous_pts = sorted(contiguous_pts, key=lambda item: item.get_median(), reverse=True)
-        
-        # Pick the largest one that is not right behind
-        angle = 0
-        for ptset in contiguous_pts:
-            current_median = ptset.get_median()
-            if current_median >= 3 and current_median <= 3.28:
-                continue
-            else:
-                angle = current_median
+        angle = self.laser_scan_processor.process_laser_scan(self.last_laser_scan)
 
         # Turn towards angle or if none is found, reverse out
-        if angle == 0:
+        if angle is None:
+            rospy.loginfo("Based on laser scans, no angle found - reversing")
+            
             self.drive.reverse()
             self.random_turn()
         else:
