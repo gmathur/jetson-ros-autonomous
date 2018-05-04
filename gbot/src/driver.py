@@ -89,15 +89,12 @@ class Driver:
         self.track_imu.reset()
         #for i in range(0, int(turn_time / 0.1)):
         while(True):
-            time.sleep(0.2)
+            time.sleep(0.01)
             angular_change = abs(self.track_imu.get_angular_change())
-            rospy.loginfo("Angular change %f" % (angular_change))
-            if angular_change < 0.1:
-                # Turn isnt happening for whatever reason
-                rospy.loginfo("Aborting turn as IMU isnt changing")
-                return True
+            rospy.logdebug("Angular change %f (want %f)", angular_change, turn_angle)
             
-            if angular_change > turn_angle:
+            if angular_change >= turn_angle:
+                rospy.loginfo("Turn complete. Wanted %f angular change %f", turn_angle, angular_change)
                 return False
 
             if (time.time() - start_time) > 2:

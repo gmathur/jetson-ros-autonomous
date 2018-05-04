@@ -177,7 +177,6 @@ class AutoPilot:
             self.drive.reverse()
             self.random_turn()
         else:
-            print angle
             rospy.loginfo("Based on laser scans, turning towards %f", angle)
 
             # Turn in that direction

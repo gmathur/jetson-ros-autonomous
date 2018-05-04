@@ -8,7 +8,7 @@ from auto_pilot import AutoPilot
 
 class PilotInit:
     def __init__(self):
-        self.dimension_driver = DimensionDriver(128, '/dev/ttyUSB1')
+        self.dimension_driver = DimensionDriver(128, '/dev/ttyUSB0')
         self.driver = Driver(self.dimension_driver)
         self.auto_pilot = AutoPilot(self.driver)
         
