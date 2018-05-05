@@ -108,7 +108,7 @@ class Driver:
         while(True):
             time.sleep(0.01)
             angular_change = abs(self.track_imu.get_angular_change())
-            rospy.logdebug("Angular change %f (want %f)", angular_change, turn_angle)
+            rospy.loginfo("Angular change %f (want %f)", angular_change, turn_angle)
             
             if angular_change >= turn_angle:
                 rospy.loginfo("Turn complete. Wanted %f angular change %f", turn_angle, angular_change)

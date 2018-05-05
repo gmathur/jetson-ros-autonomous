@@ -20,11 +20,11 @@ class AutoPilot:
         self.last_laser_scan = None
 
     def check_for_collision(self, min_dist):
-        if self.driver.state_tracker.dist:
-            if self.driver.state_tracker.dist - min_dist > 300:
-                rospy.loginfo("Massive reading change (current %d last %d) - possible collision",
-                        self.driver.state_tracker.dist, min_dist)
-                return True
+        #if self.driver.state_tracker.dist:
+        #    if self.driver.state_tracker.dist - min_dist > 300:
+        #        rospy.loginfo("Massive reading change (current %d last %d) - possible collision",
+        #                self.driver.state_tracker.dist, min_dist)
+        #        return True
 
         return False
 
@@ -50,17 +50,17 @@ class AutoPilot:
         if min_dist <= 25 or self.check_for_collision(min_dist):
             self.obstacle_encountered()
         else:
-            just_started = len(self.driver.state_tracker.states) == 2 or \
-                    self.driver.state_tracker.get_last_state() == RobotState.STOP
+            #just_started = len(self.driver.state_tracker.states) == 2 or \
+            #        self.driver.state_tracker.get_last_state() == RobotState.STOP
             self.driver.track_imu.reset()
             self.driver.speed_tracker.adjust_speed(min_dist, self.driver.state_tracker.get_last_dist())
             self.driver.forward()
             time.sleep(0.2)
 
-            if just_started and self.driver.track_imu.should_use_imu() and \
-                    not self.driver.track_imu.is_linear_change_significant():
-                rospy.loginfo("No change in IMU readings since starting movement")
-                self.obstacle_encountered()
+            #if just_started and self.driver.track_imu.should_use_imu() and \
+            #        not self.driver.track_imu.is_linear_change_significant():
+            #    rospy.loginfo("No change in IMU readings since starting movement")
+            #    self.obstacle_encountered()
             
         self.driver.state_tracker.set_last_dist(min_dist)
         self.last_execution = time.time()
