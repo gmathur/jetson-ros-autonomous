@@ -47,7 +47,7 @@ class AutoPilot:
         min_dist = min_dist if min_dist < data.right else data.right
 
         # If straight is ok - keep going
-        if min_dist <= 25 or self.check_for_collision(min_dist):
+        if min_dist <= 0.25 or self.check_for_collision(min_dist):
             self.obstacle_encountered()
         else:
             #just_started = len(self.driver.state_tracker.states) == 2 or \

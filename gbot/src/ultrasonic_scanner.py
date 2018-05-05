@@ -24,7 +24,7 @@ class SensorState:
         ]
 
     def get_dist(self, speed_of_sound):
-        return (self.end - self.start) * ((speed_of_sound * 100) / 2)
+        return (self.end - self.start) * ((speed_of_sound) / 2)
 
     def execute(self):
         return self.state_map[self.state]()
