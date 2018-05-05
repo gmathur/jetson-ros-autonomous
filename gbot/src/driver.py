@@ -65,7 +65,7 @@ class Driver:
     def stop(self):
         self.execute_cmd(RobotState.STOP)
 
-    def emergency_stop(self):
+    def do_emergency_stop(self):
         self.stop()
         self.emergency_stop = True
 

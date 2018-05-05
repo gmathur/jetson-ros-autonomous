@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import time
+import math
 import rospy
 import sys
 import signal
@@ -34,6 +36,9 @@ class TrackImu:
         self.baseline_euler = None
         self.last_euler = None
         self.last_imu = None
+        self.start_vertical_angle = None
+        self.analyzing_vertical_start = self.get_current_time()
+        self.analyzing_vertical = True
         self.driver = driver
 
         rospy.Subscriber("imu/data", Imu, self.imu_callback, queue_size=1)
@@ -69,14 +74,37 @@ class TrackImu:
 
         return changed
 
+    def get_current_time(self):
+        return int(round(time.time() * 1000))
+
     def do_emergency_checks(self, data):
-        if (data.orientation.z < 0 and data.orientation.z > -0.58) or \
-                (data.orientation.z > 0 and data.orientation.z < 0.58):
-            rospy.logerr("********************** EMERGENCY STOP! Imu orientation.z %f **********************",
-                    data.orientation.z)
-            self.driver.emergency_stop()
+        if not self.analyzing_vertical:
+             self.start_vertical_tracking(data)
+             return
+
+        if self.get_current_time() - self.analyzing_vertical_start < 100:
+            return
+
+        if self.start_vertical_angle is None:
+            return
+
+        # Time is up
+        delta = abs(abs(math.sin(data.y)) - self.start_vertical_angle)
+        if delta > 0.16:
+            rospy.logerr("********************** EMERGENCY STOP! Vertical change %f **********************", delta)
+            self.driver.do_emergency_stop()
+
+        self.start_vertical_tracking(data)
+
+    def start_vertical_tracking(self, data):
+        self.start_vertical_angle = abs(math.sin(data.y))
+        self.analyzing_vertical_start =  self.get_current_time()
+        self.analyzing_vertical = True
 
     def euler_callback(self, data):
+        # Do emergency checks
+        self.do_emergency_checks(data)
+
         if self.reset_euler:
             self.reset_euler = False
             self.baseline_euler = data
@@ -84,9 +112,6 @@ class TrackImu:
         self.last_euler = data
 
     def imu_callback(self, data):
-        # Do emergency checks
-        self.do_emergency_checks(data)
-
         if self.reset_imu:
             self.reset_imu = False
             self.baseline_imu = data
