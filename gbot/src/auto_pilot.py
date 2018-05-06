@@ -20,7 +20,7 @@ class AutoPilot:
         self.last_laser_scan = None
 
     def check_laser_scan_for_obstacles(self):
-        if not should_use_laser_scan():
+        if not self.should_use_laser_scan():
             return
 
         return self.laser_scan_processor.check_for_front_obstacles(self.last_laser_scan)

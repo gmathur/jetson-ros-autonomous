@@ -58,7 +58,7 @@ class LaserScanProcessor:
         angle_per_pt = (2 * 3.142) / len(laser_scan.ranges)
         
         # Calculate range of laser scan pts to evaluate
-        right_max_range = 0.7855 / angle_per_pt
+        right_max_range = int(0.7855 / angle_per_pt)
         left_min_range = len(laser_scan.ranges) - right_max_range
 
         num_matches = 0

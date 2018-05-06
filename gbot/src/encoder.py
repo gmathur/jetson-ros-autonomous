@@ -24,6 +24,7 @@ class EncoderCounter:
         self.increment_counter = increment
 
     def detect(self, gpio, level, tick):
+        rospy.loginfo("Detect")
         if self.increment_counter:
             if self.count == 32768:
                 self.count = 0 # Wrap around
@@ -69,7 +70,8 @@ class RobotEncoderController:
     def stop(self):
         self.pi.stop()
 
-    def spin(self):    
+    def spin(self):
+        rospy.loginfo("Encoder spinning")
         rate = rospy.Rate(10)
         while not rospy.is_shutdown():
             self.lencoder.publish()
