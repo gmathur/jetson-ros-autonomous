@@ -13,6 +13,9 @@
   <node pkg="gbot" type="distance_scanner.py" name="proximity_scanner" output="screen" required="true">
   </node>
 
+  #### Include differential drive encoders ###########
+  <include file="$(find gbot)/launch/differential-drive.launch" />
+
   #### Start pilot program ###########
 
   <node pkg="gbot" type="robot_pilot.py" name="robot_pilot" output="screen" >
