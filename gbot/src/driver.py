@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 import rospy
 import time
-from encoder import RobotEncoderController
 from track_imu import TrackImu
 from robot_state import RobotState, CommandSource, RobotStateTracker
 from speed_tracker import SpeedTracker
+from std_msgs.msg import String
 
 class Driver:
     TURN_TIME_PER_RADIAN = 0.318
@@ -13,16 +13,16 @@ class Driver:
         self.driver = dimension_driver
         self.speed_tracker = SpeedTracker()
         self.state_tracker = RobotStateTracker()
-        self.encoder_controller = RobotEncoderController()
         self.track_imu = TrackImu(self)
         self.emergency_stop = False
 
+        self.pub = rospy.Publisher("robot_commands", String, queue_size=1)
+
     def open(self):
-        self.encoder_controller.stop()
         self.driver.open()
 
     def spin(self):
-        self.encoder_controller.spin()
+        pass
 
     def forward(self):
         if self.emergency_stop:
@@ -73,8 +73,6 @@ class Driver:
         rospy.loginfo("Executing %s fwd speed: %d" % (cmd, self.speed_tracker.forward_speed))
         self.state_tracker.add(cmd)
         
-        self.encoder_controller.set_state(cmd)
-        
         if cmd == RobotState.FORWARD:
             self.driver.drive_forward(self.speed_tracker.forward_speed)
         elif cmd == RobotState.REVERSE:
@@ -86,6 +84,8 @@ class Driver:
         elif cmd == RobotState.STOP:
             self.driver.stop()
             self.speed_tracker.reset_forward_speed()
+
+        self.pub.publish(cmd)
 
     def track_angular_change(self, turn_angle=1.57):
         if self.track_imu.should_use_imu():

@@ -32,6 +32,11 @@
   <node pkg="gbot" type="distance_scanner.py" name="proximity_scanner" output="screen" required="true">
   </node>
 
+  #### Start wheel encoders ###########
+
+  <node pkg="gbot" type="encoder.py" name="wheel_encoder" output="screen" required="true">
+  </node>
+
   #### Include differential drive encoders ###########
   <include file="$(find gbot)/launch/differential-drive.launch" />
 

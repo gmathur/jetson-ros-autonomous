@@ -6,25 +6,27 @@ import RPi.GPIO as GPIO
 from std_msgs.msg import Int16
 from robot_state import RobotState
 import pigpio
+from std_msgs.msg import Int16, String
 
 class EncoderCounter:
     def __init__(self, pi, pin, topic):
         self.pi = pi
         self.pin = pin
         self.count = 0
+        self.topic = topic
 
         self.pi.set_mode(pin, pigpio.INPUT)
         self.pi.set_pull_up_down(pin, pigpio.PUD_DOWN)
         self.pi.callback(pin, pigpio.RISING_EDGE, self.detect)
 
         self.pub = rospy.Publisher(topic, Int16, queue_size=1)
+
         self.increment_counter = True
 
     def set_counter_positive(self, increment):
         self.increment_counter = increment
 
     def detect(self, gpio, level, tick):
-        rospy.loginfo("Detect")
         if self.increment_counter:
             if self.count == 32768:
                 self.count = 0 # Wrap around
@@ -37,7 +39,7 @@ class EncoderCounter:
                 self.count -= 1
 
         if self.count % 10 == 0:
-            rospy.logdebug("%s encoder count %d", topic, self.count)
+            rospy.logdebug("%s encoder count %d", self.topic, self.count)
 
     def publish(self):
         counter = Int16(self.count)
@@ -49,6 +51,8 @@ class RobotEncoderController:
 
         self.lencoder = EncoderCounter(self.pi, 23, 'lwheel')
         self.rencoder = EncoderCounter(self.pi, 24, 'rwheel')
+
+        rospy.Subscriber("robot_commands", String, self.set_state, queue_size=1)
 
     def set_state(self, state):
         if state == RobotState.FORWARD:
@@ -82,7 +86,7 @@ class RobotEncoderController:
 if __name__ == "__main__":
     controller = RobotEncoderController()
     try:
-        rospy.init_node('encoder')
+        rospy.init_node('wheel_encoder')
         controller.spin()
     except KeyboardInterrupt:  # When 'Ctrl+C' is pressed, the child program destroy() will be  executed.
         pass
