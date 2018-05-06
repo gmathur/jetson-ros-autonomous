@@ -10,6 +10,8 @@ import numpy
 
 MARGIN = 0.1
 MIN_DIST = 0.3
+FRONT_MIN_DIST = 0.1
+SIDE_DIST_DELTA = 0.12
 
 class ContiguousScanPoints:
 
@@ -51,6 +53,30 @@ class ContiguousScanPoints:
 class LaserScanProcessor:
     def __init__(self):
         self.pub = rospy.Publisher('scan_collisions', LaserScan, queue_size=1)
+
+    def check_for_front_obstacles(self, laser_scan):
+        angle_per_pt = (2 * 3.142) / len(laser_scan.ranges)
+        
+        # Calculate range of laser scan pts to evaluate
+        right_max_range = 0.7855 / angle_per_pt
+        left_min_range = len(laser_scan.ranges) - right_max_range
+
+        num_matches = 0
+        for i in range(0, right_max_range):
+            if laser_scan.ranges[i] > 0 and \
+                    laser_scan.ranges[i] < FRONT_MIN_DIST + i * (SIDE_DIST_DELTA / right_max_range):
+                num_matches += 1
+
+        for i in range(len(laser_scan.ranges)-1, left_min_range, -1):
+            dist_delta = i - left_min_range
+            if laser_scan.ranges[i] > 0 and \
+                    laser_scan.ranges[i] < FRONT_MIN_DIST + dist_delta * (SIDE_DIST_DELTA / right_max_range):
+                num_matches += 1
+
+        if num_matches > 10:
+            return True
+        else:
+            return False
 
     def process_laser_scan(self, laser_scan):
         contiguous_pts = [ContiguousScanPoints()]

@@ -19,14 +19,11 @@ class AutoPilot:
 
         self.last_laser_scan = None
 
-    def check_for_collision(self, min_dist):
-        #if self.driver.state_tracker.dist:
-        #    if self.driver.state_tracker.dist - min_dist > 300:
-        #        rospy.loginfo("Massive reading change (current %d last %d) - possible collision",
-        #                self.driver.state_tracker.dist, min_dist)
-        #        return True
+    def check_laser_scan_for_obstacles(self):
+        if not should_use_laser_scan():
+            return
 
-        return False
+        return self.laser_scan_processor.check_for_front_obstacles(self.last_laser_scan)
 
     def scan_callback(self, data):
         self.last_laser_scan = data
@@ -47,7 +44,7 @@ class AutoPilot:
         min_dist = min_dist if min_dist < data.right else data.right
 
         # If straight is ok - keep going
-        if min_dist <= 0.25 or self.check_for_collision(min_dist):
+        if min_dist <= 0.25 or self.check_laser_scan_for_obstacles():
             self.obstacle_encountered()
         else:
             #just_started = len(self.driver.state_tracker.states) == 2 or \
