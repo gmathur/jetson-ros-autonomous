@@ -92,6 +92,7 @@ class LaserScanProcessor:
                 rospy.logdebug("Skipping laser pt at %f", current_angle)
                 continue
 
+            pt = laser_scan.range_max if pt == 0 else pt
             if not contiguous_pts[len(contiguous_pts)-1].add(pt, current_angle, i):
                 new_contiguous_pts = ContiguousScanPoints()
                 new_contiguous_pts.add(pt, current_angle, i)
