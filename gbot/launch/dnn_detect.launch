@@ -1,7 +1,7 @@
 <!-- Run the dnn_detect node -->
 <launch>
   <!-- namespace for camera input -->
-  <arg name="camera" default="/camera"/>
+  <arg name="camera" default="/raspicam_node"/>
   <arg name="image" default="image"/>
   <arg name="transport" default="compressed"/>
 
