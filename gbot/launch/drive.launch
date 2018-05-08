@@ -1,6 +1,5 @@
 <launch>
-  <param name ="/use_sim_time" value="false"/>
-  <arg name="use_rviz" default="true" />
+  <arg name="use_rviz" default="false" />
 
   #### publish static transforms ###########
 
@@ -44,5 +43,8 @@
 
   <node pkg="gbot" type="robot_pilot.py" name="robot_pilot" output="screen" >
   </node>
+
+  #### Start camera ###########
+  <include file="$(find gbot)/launch/camera.launch" />
 
 </launch>
