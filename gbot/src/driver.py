@@ -25,10 +25,6 @@ class Driver:
         pass
 
     def forward(self):
-        if self.emergency_stop:
-            rospy.logerr("Emergency stop. Ignoring forward command")
-            return
-
         self.execute_cmd(RobotState.FORWARD)
 
     def turn_left(self):
@@ -38,10 +34,6 @@ class Driver:
         self.turn_angle(1.57)
 
     def turn_angle(self, angle):
-        if self.emergency_stop:
-            rospy.logerr("Emergency stop. Ignoring turn %f command", angle)
-            return
-
         if angle <= 3.142:
             # Turn right
             self.execute_cmd(RobotState.RIGHT)
@@ -54,10 +46,6 @@ class Driver:
             self.execute_cmd(RobotState.STOP)
 
     def reverse(self):
-        if self.emergency_stop:
-            rospy.logerr("Emergency stop. Ignoring reverse command")
-            return
-        
         self.execute_cmd(RobotState.REVERSE)
         time.sleep(1)
         self.execute_cmd(RobotState.STOP)
@@ -73,6 +61,13 @@ class Driver:
         rospy.loginfo("Executing %s fwd speed: %d" % (cmd, self.speed_tracker.forward_speed))
         self.state_tracker.add(cmd)
         
+        data = String(cmd)
+        self.pub.publish(data)
+
+        if self.emergency_stop and cmd != RobotState.STOP:
+             rospy.logerr("Emergency stop. Ignoring %s command", cmd)
+             return
+        
         if cmd == RobotState.FORWARD:
             self.driver.drive_forward(self.speed_tracker.forward_speed)
         elif cmd == RobotState.REVERSE:
@@ -85,7 +80,6 @@ class Driver:
             self.driver.stop()
             self.speed_tracker.reset_forward_speed()
 
-        self.pub.publish(cmd)
 
     def track_angular_change(self, turn_angle=1.57):
         if self.track_imu.should_use_imu():

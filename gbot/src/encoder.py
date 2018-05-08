@@ -54,7 +54,9 @@ class RobotEncoderController:
 
         rospy.Subscriber("robot_commands", String, self.set_state, queue_size=1)
 
-    def set_state(self, state):
+    def set_state(self, data):
+        state = data.data
+
         if state == RobotState.FORWARD:
             self.lencoder.set_counter_positive(True)
             self.rencoder.set_counter_positive(True)
