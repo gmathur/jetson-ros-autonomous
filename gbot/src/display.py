@@ -20,9 +20,10 @@ SPI_PORT = 0
 SPI_DEVICE = 0
 
 class Display:
-    def __init__(self, font):
-        rospy.loginfo("Loading font %s", font)
+    def __init__(self, font, assets_dir):
+        rospy.loginfo("Loading font %s assets dir %s", font, assets_dir)
 
+        self.assets_dir = assets_dir
         self.disp = TFT.ST7735(
             DC,
             rst=RST,
@@ -73,6 +74,14 @@ class Display:
         if self.x_offset > (HEIGHT - 32):
             self.x_offset = 0
 
+    def display_image(self, filename):
+        # Load an image.
+        image = Image.open("%s/%s" % (self.assets_dir, filename))
+
+        # Resize the image and rotate it so matches the display.
+        image = image.resize((HEIGHT, WIDTH))
+        self.disp.display(image)
+
     def robot_state(self, data):
         self.display_text(data.data)
 
@@ -82,8 +91,10 @@ class Display:
 if __name__ == "__main__":
     rospy.init_node('display')
     font = rospy.get_param("font")
-    display = Display(font)
+    assets_dir = rospy.get_param("assets")
+    display = Display(font, assets_dir)
     
+    display.display_image("rising_sun.png")
     try:
         rospy.spin()
     finally:

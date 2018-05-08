@@ -1,4 +1,11 @@
 <launch>
+  #### Start display ###########
+
+  <param name="font" value="$(find gbot)/font/minecraftia.ttf" />
+  <param name="assets" value="$(find gbot)/assets" />
+  <node pkg="gbot" type="display.py" name="display" output="screen" >
+  </node>
+
   <arg name="use_rviz" default="false" />
 
   #### publish static transforms ###########
@@ -44,16 +51,7 @@
   <node pkg="gbot" type="robot_pilot.py" name="robot_pilot" output="screen" >
   </node>
 
-  #### Start display ###########
-
-  <param name="font" value="$(find gbot)/font/minecraftia.ttf" />
-  <node pkg="gbot" type="display.py" name="display" output="screen" >
-  </node>
-
-
   #### Start camera ###########
   <include file="$(find gbot)/launch/camera.launch" />
-
-  
 
 </launch>
