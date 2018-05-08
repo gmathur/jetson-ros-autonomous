@@ -88,8 +88,9 @@ class UltrasonicScanner:
                 for pin in range(self.num_sensors):
                     completed += sensor_states[pin].execute()
 
-                if time.time() - start_time > 1000:
-                    return
+                if time.time() - start_time > 1:
+                    rospy.logerr("Aborting ultrasonic reading")
+                    return [-1] * self.num_sensors
 
             samples.append(sensor_states)
 
