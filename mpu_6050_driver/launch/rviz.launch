@@ -1,5 +1,0 @@
-<launch>
-
-  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find mpu_6050_driver)/rviz/demo.rviz" required="true"/>
-
-</launch>
