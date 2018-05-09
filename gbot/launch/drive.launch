@@ -1,10 +1,7 @@
 <launch>
   #### Start display ###########
 
-  <param name="font" value="$(find gbot)/font/minecraftia.ttf" />
-  <param name="assets" value="$(find gbot)/assets" />
-  <node pkg="gbot" type="display.py" name="display" output="screen" >
-  </node>
+  <include file="$(find gbot)/launch/display.launch" />
 
   <arg name="use_rviz" default="false" />
 

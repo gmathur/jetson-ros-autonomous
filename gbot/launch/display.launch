@@ -1,0 +1,9 @@
+<launch>
+  #### Start display ###########
+
+  <param name="font" value="$(find gbot)/font/minecraftia.ttf" />
+  <param name="assets" value="$(find gbot)/assets" />
+  <node pkg="gbot" type="display.py" name="display" output="screen" launch-prefix="sudo">
+  </node>
+</launch>
+
