@@ -10,6 +10,9 @@ from threading import Thread
 from sensor_msgs.msg import Imu
 from geometry_msgs.msg import Vector3
 
+VERTICAL_ANGLE_THRESHOLD = 0.015
+CONTIGUOUS_VERTICAL_PERIODS_THRESHOLD = 12
+
 def unit_vector(vector):
     """ Returns the unit vector of the vector.  """
     return vector / np.linalg.norm(vector)
@@ -38,7 +41,8 @@ class TrackImu:
         self.last_imu = None
         self.start_vertical_angle = None
         self.analyzing_vertical_start = self.get_current_time()
-        self.analyzing_vertical = True
+        self.contiguous_vertical_imu_periods = 0
+        self.contiguous_vertical_delta_positive = True
         self.driver = driver
 
         rospy.Subscriber("imu/data", Imu, self.imu_callback, queue_size=1)
@@ -78,28 +82,37 @@ class TrackImu:
         return int(round(time.time() * 1000))
 
     def do_emergency_checks(self, data):
-        if not self.analyzing_vertical:
-             self.start_vertical_tracking(data)
-             return
+        if self.start_vertical_angle is None:
+            self.start_vertical_tracking(data)
+            return
 
-        if self.get_current_time() - self.analyzing_vertical_start < 100:
+        if self.get_current_time() - self.analyzing_vertical_start < 0.01:
             return
 
         if self.start_vertical_angle is None:
             return
 
         # Time is up
-        delta = abs(abs(math.sin(data.y)) - self.start_vertical_angle)
-        if delta > 0.16:
-            rospy.logerr("********************** EMERGENCY STOP! Vertical change %f **********************", delta)
-            self.driver.do_emergency_stop()
+        delta = abs(math.sin(data.y)) - self.start_vertical_angle
+        delta_positive = True if delta > 0 else False
+
+        rospy.loginfo("Current vertical delta %f self.contiguous_vertical_imu_periods %d", delta, self.contiguous_vertical_imu_periods)
+
+        if delta > VERTICAL_ANGLE_THRESHOLD and self.contiguous_vertical_delta_positive == delta_positive:
+            self.contiguous_vertical_imu_periods += 1
+
+            if self.contiguous_vertical_imu_periods >= CONTIGUOUS_VERTICAL_PERIODS_THRESHOLD:
+                rospy.logerr("********************** EMERGENCY STOP! Vertical change %f **********************", delta)
+                self.driver.do_emergency_stop()
+        else:
+            self.contiguous_vertical_imu_periods = 0
+            self.contiguous_vertical_delta_positive = delta_positive
 
         self.start_vertical_tracking(data)
 
     def start_vertical_tracking(self, data):
         self.start_vertical_angle = abs(math.sin(data.y))
         self.analyzing_vertical_start =  self.get_current_time()
-        self.analyzing_vertical = True
 
     def euler_callback(self, data):
         # Do emergency checks

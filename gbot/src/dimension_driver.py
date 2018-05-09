@@ -3,7 +3,7 @@ import time
 import serial
 
 class DimensionDriver:
-    MOTOR_1_MULTIPLIER = 0.85
+    MOTOR_1_MULTIPLIER = 1
     MOTOR_2_MULTIPLIER = 1
 
     def __init__(self, address, port):
