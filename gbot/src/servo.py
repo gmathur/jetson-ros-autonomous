@@ -1,15 +1,7 @@
 #!/usr/bin/env python
 
-# servo_demo.py
-# 2016-10-07
-# Public Domain
-
-# servo_demo.py          # Send servo pulses to GPIO 4.
-# servo_demo.py 23 24 25 # Send servo pulses to GPIO 23, 24, 25.
-
 import sys
 import time
-import random
 import pigpio
 
 pi = pigpio.pi()
@@ -43,27 +35,40 @@ class ServoControl:
 
         self.stop()
 
+    def get_current_position(self):
+        return self.position
+
     def stop(self):
         self.pi.set_servo_pulsewidth(self.pin, 0)
 
     def close(self):
         self.move_to_position(1500)
 
-tilt = ServoControl(12, pi, 800, 2000)
-try:
-    tilt.move_to_position(800)
-    time.sleep(1)
-    tilt.move_to_position(2000)
-    time.sleep(1)
+class TiltControl(ServoControl):
+    def __init__(self):
+        super(TiltControl, self).__init__(12, pi, 800, 2000)
 
-    pan = ServoControl(13, pi, 1150, 1850)
-    pan.move_to_position(1000)
-    time.sleep(1)
-    pan.move_to_position(2000)
-    time.sleep(1)
-finally:
-    tilt.close()
-    pan.close()
-    pi.stop()
+class PanControl(ServoControl):
+    def __init__(self):
+        super(PanControl, self).__init__(13, pi, 1150, 1850)
+
+if __name__ == '__main__':
+
+    tilt = TiltControl()
+    try:
+        tilt.move_to_position(800)
+        time.sleep(1)
+        tilt.move_to_position(2000)
+        time.sleep(1)
+
+        pan = PanControl()
+        pan.move_to_position(1000)
+        time.sleep(1)
+        pan.move_to_position(2000)
+        time.sleep(1)
+    finally:
+        tilt.close()
+        pan.close()
+        pi.stop()
 
 
