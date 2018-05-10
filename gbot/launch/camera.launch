@@ -9,4 +9,8 @@
 
     <param name="camera_frame_id" value="camera"/>
   </node>
+  
+  <!-- Add camera servo controls -->
+  <node pkg = "gbot" type="camera_servo_control.py" name="camera_servo_control" output="screen">
+  </node>
 </launch>
