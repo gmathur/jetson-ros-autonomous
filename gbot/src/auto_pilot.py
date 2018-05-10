@@ -8,6 +8,8 @@ from gbot.msg import Proximity
 from sensor_msgs.msg import LaserScan
 from laser_scan_processor import LaserScanProcessor
 
+DISTANCE_THRESHOLD = 0.30
+
 class AutoPilot:
     def __init__(self, driver):
         self.driver = driver
@@ -44,7 +46,7 @@ class AutoPilot:
         min_dist = min_dist if min_dist < data.right else data.right
 
         # If straight is ok - keep going
-        if min_dist <= 0.25 or self.check_laser_scan_for_obstacles():
+        if min_dist <= DISTANCE_THRESHOLD or self.check_laser_scan_for_obstacles():
             self.obstacle_encountered()
         else:
             #just_started = len(self.driver.state_tracker.states) == 2 or \
