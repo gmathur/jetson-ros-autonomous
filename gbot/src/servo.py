@@ -1,36 +1,69 @@
 #!/usr/bin/env python
 
-import RPi.GPIO as GPIO
-from time import sleep
+# servo_demo.py
+# 2016-10-07
+# Public Domain
+
+# servo_demo.py          # Send servo pulses to GPIO 4.
+# servo_demo.py 23 24 25 # Send servo pulses to GPIO 23, 24, 25.
+
+import sys
+import time
+import random
+import pigpio
+
+pi = pigpio.pi()
+
+if not pi.connected:
+   exit()
 
 class ServoControl:
-    PIN = 12
-    
-    def __init__(self):
-        GPIO.setmode(GPIO.BOARD)
+    def __init__(self, pin, pi, min_pos, max_pos):
+        self.pin = pin
+        self.pi = pi
+        self.min_pos = min_pos
+        self.max_pos = max_pos
+        self.set_position(1500)
 
-        GPIO.setup(ServoControl.PIN, GPIO.OUT)
-        self.pwm=GPIO.PWM(ServoControl.PIN, 50)
-        self.pwm.start(0)
-        self.last_angle = 90
+    def set_position(self, new_position):
+        self.pi.set_servo_pulsewidth(self.pin, new_position)
+        self.position = new_position
+        time.sleep(0.01)
 
-    def setAngle(self, angle):
-        if angle == self.last_angle:
-            # Nothing to do
-            return
+    def move_to_position(self, new_position):
+        if new_position > self.max_pos:
+            new_position = self.max_pos
+        if new_position < self.min_pos:
+            new_position = self.min_pos
 
-        duty = angle / 18 + 2
-        self.pwm.ChangeDutyCycle(duty)
+        step = 5 if new_position > self.position else -5
 
-        if abs(angle - self.last_angle) > 45:
-            sleep(0.35)
-        else:
-            sleep(0.2)
-        self.last_angle = angle
+        for pos in range(self.position, new_position, step):
+            self.set_position(pos)
 
-if __name__== "__main__":
-    servo = ServoControl()
-    servo.setAngle(90)
-    servo.setAngle(45)
-    servo.setAngle(135)
-    servo.setAngle(90)
+        self.stop()
+
+    def stop(self):
+        self.pi.set_servo_pulsewidth(self.pin, 0)
+
+    def close(self):
+        self.move_to_position(1500)
+
+tilt = ServoControl(12, pi, 800, 2000)
+try:
+    tilt.move_to_position(800)
+    time.sleep(1)
+    tilt.move_to_position(2000)
+    time.sleep(1)
+
+    pan = ServoControl(13, pi, 1150, 1850)
+    pan.move_to_position(1000)
+    time.sleep(1)
+    pan.move_to_position(2000)
+    time.sleep(1)
+finally:
+    tilt.close()
+    pan.close()
+    pi.stop()
+
+
