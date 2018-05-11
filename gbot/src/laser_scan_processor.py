@@ -10,7 +10,7 @@ import numpy
 
 MARGIN = 0.1
 MIN_DIST = 0.3
-FRONT_MIN_DIST = 0.2
+FRONT_MIN_DIST = 0.3
 
 class ContiguousScanPoints:
 
