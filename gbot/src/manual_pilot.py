@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import rospy
+from std_msgs.msg import Int16
 
 class ManualPilot:
     def __init__(self, driver):
