@@ -57,8 +57,8 @@ class LaserScanProcessor:
 
     def check_for_front_obstacles(self, laser_scan):
         # Calculate range of laser scan pts to evaluate
-        min_range = int(((3.142 / 4) * 3) / laser_scan.angle_increment)
-        max_range = int(((3.142 / 4) * 5) / laser_scan.angle_increment)
+        min_range = int(((3.142 / 6) * 5) / laser_scan.angle_increment)
+        max_range = int(((3.142 / 6) * 7) / laser_scan.angle_increment)
 
         num_matches = 0
         ptset = ContiguousScanPoints()
