@@ -2,6 +2,7 @@
 import rospy
 import time
 from track_imu import TrackImu
+from track_encoders import TrackEncoders
 from robot_state import RobotState, CommandSource, RobotStateTracker
 from speed_tracker import SpeedTracker
 from std_msgs.msg import String
@@ -14,6 +15,7 @@ class Driver:
         self.speed_tracker = SpeedTracker()
         self.state_tracker = RobotStateTracker()
         self.track_imu = TrackImu(self)
+        self.track_encoders = TrackEncoders(self)
         self.emergency_stop = False
 
         self.pub = rospy.Publisher("robot_commands", String, queue_size=1)
