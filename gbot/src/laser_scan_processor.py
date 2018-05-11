@@ -48,7 +48,7 @@ class ContiguousScanPoints:
         return self.median
 
     def get_angle(self):
-        return (self.start_angle + self.end_angle) / 2.0
+        return (((self.start_angle + self.end_angle) / 2.0) + 3.142) % (2 * 3.142)
 
 class LaserScanProcessor:
     def __init__(self):
@@ -149,7 +149,7 @@ class LaserScanProcessor:
         scan.ranges = [0.0] * num_pts
         scan.intensities = [0.0] * num_pts
         for i in range(len(ptset.pts)):
-            scan.ranges[ptset.start_pt_num+i] = ptset.pts[i]
+            scan.ranges[(ptset.start_pt_num+i + int(num_pts/2)) % num_pts] = ptset.pts[i]
             #scan.intensities[ptset.start_pt_num+i] = 10.0
 
         scan.header.stamp = rospy.Time.now()
