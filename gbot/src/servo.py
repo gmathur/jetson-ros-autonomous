@@ -16,6 +16,7 @@ class ServoControl:
         self.min_pos = min_pos
         self.max_pos = max_pos
         self.set_position(1500)
+        self.stop()
 
     def set_position(self, new_position):
         self.pi.set_servo_pulsewidth(self.pin, new_position)
@@ -28,7 +29,11 @@ class ServoControl:
         if new_position < self.min_pos:
             new_position = self.min_pos
 
-        step = 5 if new_position > self.position else -5
+        if new_position == self.position:
+            # Nothing to do
+            return
+
+        step = 5 if new_position >= self.position else -5
 
         for pos in range(self.position, new_position, step):
             self.set_position(pos)
@@ -46,11 +51,11 @@ class ServoControl:
 
 class TiltControl(ServoControl):
     def __init__(self):
-        super(TiltControl, self).__init__(12, pi, 800, 2000)
+        ServoControl.__init__(self, 12, pi, 800, 2000)
 
 class PanControl(ServoControl):
     def __init__(self):
-        super(PanControl, self).__init__(13, pi, 1150, 1850)
+        ServoControl.__init__(self, 13, pi, 1150, 1850)
 
 if __name__ == '__main__':
 
