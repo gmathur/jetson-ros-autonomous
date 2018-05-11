@@ -8,7 +8,7 @@ from gbot.msg import Proximity
 from sensor_msgs.msg import LaserScan
 from laser_scan_processor import LaserScanProcessor
 
-DISTANCE_THRESHOLD = 0.30
+DISTANCE_THRESHOLD = 0.50
 
 class AutoPilot:
     def __init__(self, driver):

@@ -1,5 +1,5 @@
 <launch>
-  <node name="ydlidar_node"  pkg="ydlidar"  type="ydlidar_node" output="screen">
+  <node name="ydlidar_node"  pkg="ydlidar"  type="ydlidar_node" output="screen" required="true">
     <param name="port"         type="string" value="/dev/ydlidar"/>  
     <param name="baudrate"     type="int"    value="128000"/>
     <param name="frame_id"     type="string" value="laser"/>

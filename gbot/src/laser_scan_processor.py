@@ -69,7 +69,7 @@ class LaserScanProcessor:
                 num_matches += 1
                 ptset.add(1.0, current_angle, i)
 
-        if num_matches > 10:
+        if num_matches > 3:
             rospy.loginfo("Front obstacle encountered")
             self.publish_obstacles_scan([ptset], len(laser_scan.ranges), laser_scan,
                     self.front_obstacles_pub)
