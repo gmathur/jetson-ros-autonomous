@@ -84,11 +84,11 @@ class Driver:
 
 
     def track_angular_change(self, turn_angle=1.57):
-        if self.track_imu.should_use_imu():
-            rospy.loginfo("Tracking IMU change for turns")
-            self.track_imu_for_angular_change(turn_angle)
-        else:
-            rospy.logwarn("IMU data not available - falling back to time based turns")
+#        if self.track_imu.should_use_imu():
+#            rospy.loginfo("Tracking IMU change for turns")
+#            self.track_imu_for_angular_change(turn_angle)
+#        else:
+#            rospy.logwarn("IMU data not available - falling back to time based turns")
             self.track_time_for_angular_change(turn_angle)
 
     def track_time_for_angular_change(self, turn_angle=1.57):
@@ -102,7 +102,7 @@ class Driver:
         self.track_imu.reset()
         #for i in range(0, int(turn_time / 0.1)):
         while(True):
-            time.sleep(0.01)
+            time.sleep(0.001)
             angular_change = abs(self.track_imu.get_angular_change())
             rospy.logdebug("Angular change %f (want %f)", angular_change, turn_angle)
             
@@ -113,3 +113,22 @@ class Driver:
             if (time.time() - start_time) > 2:
                 return True
 
+if __name__== "__main__":
+    from dimension_driver import DimensionDriver
+    
+    rospy.init_node("driver")
+    motor_driver = DimensionDriver(128, '/dev/ttyUSB0')
+    driver = Driver(motor_driver)
+    driver.open()
+
+    try:
+        driver.turn_left()
+        time.sleep(1)
+        driver.turn_right()
+        time.sleep(1)
+        driver.forward()
+        time.sleep(1)
+        driver.reverse()
+        driver.stop()
+    finally:
+        motor_driver.close()
