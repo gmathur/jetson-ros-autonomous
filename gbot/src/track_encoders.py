@@ -10,7 +10,7 @@ class TrackEncoders:
     def __init__(self, driver):
         self.driver = driver
 
-        self.last_state = RobotState.FORWARD
+        self.last_state = None
         self.last_time = time.time()
         self.lmotor_reading = 0
         self.rmotor_reading = 0
@@ -25,6 +25,9 @@ class TrackEncoders:
             self.last_time = time.time()
 
     def lwheel_callback(self, data):
+        if self.last_state is None:
+            return
+
         if (time.time() - self.last_time) < 0.5:
             return
 
@@ -34,6 +37,9 @@ class TrackEncoders:
                 self.driver.do_emergency_stop()
 
     def rwheel_callback(self, data):
+        if self.last_state is None:
+            return
+
         if (time.time() - self.last_time) < 0.5:
             return
 

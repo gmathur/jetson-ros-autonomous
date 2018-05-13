@@ -11,7 +11,7 @@ from sensor_msgs.msg import Imu
 from geometry_msgs.msg import Vector3
 
 VERTICAL_ANGLE_THRESHOLD = 0.027
-CONTIGUOUS_VERTICAL_PERIODS_THRESHOLD = 8
+CONTIGUOUS_VERTICAL_PERIODS_THRESHOLD = 7
 
 def unit_vector(vector):
     """ Returns the unit vector of the vector.  """
