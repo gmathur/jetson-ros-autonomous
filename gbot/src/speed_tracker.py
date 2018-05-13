@@ -9,7 +9,7 @@ class SpeedTracker:
     def __init__(self):
         self.reset_forward_speed()
         self.reverse_speed = 100
-        self.turn_speed = 80
+        self.turn_speed = 90
 
     def reset_forward_speed(self):
         self.forward_speed = SpeedTracker.MIN_SPEED

@@ -6,6 +6,7 @@ import time
 from robot_state import RobotState
 from gbot.msg import Proximity
 from sensor_msgs.msg import LaserScan
+from std_msgs.msg import String
 import numpy
 
 MARGIN = 0.1
@@ -54,8 +55,24 @@ class LaserScanProcessor:
         self.obstacles_pub = rospy.Publisher('scan_obstacles', LaserScan, queue_size=10)
         self.front_obstacles_pub = rospy.Publisher('scan_front_obstacles', LaserScan, queue_size=10)
         self.heading_pub = rospy.Publisher('scan_heading', LaserScan, queue_size=10)
+        
+        rospy.Subscriber('robot_commands', String, self.robot_cmds_callback, queue_size=10)
+        self.last_robot_state = RobotState.FORWARD
+        self.front_obstacle_scan_processing = False
+
+    def robot_cmds_callback(self, data):
+        self.last_robot_state = data.data
 
     def check_for_front_obstacles(self, laser_scan):
+        if not self.last_robot_state in [RobotState.FORWARD, RobotState.STOP]:
+            # Dont process laser scans while turning
+            return None
+
+        if self.front_obstacle_scan_processing:
+            return None
+
+        self.front_obstacle_scan_processing = True
+
         # Calculate range of laser scan pts to evaluate
         min_range = int(((3.142 / 6) * 5) / laser_scan.angle_increment)
         max_range = int(((3.142 / 6) * 7) / laser_scan.angle_increment)
@@ -73,11 +90,19 @@ class LaserScanProcessor:
             rospy.loginfo("Front obstacle encountered")
             self.publish_obstacles_scan([ptset], len(laser_scan.ranges), laser_scan,
                     self.front_obstacles_pub)
+            self.front_obstacle_scan_processing = False
             return True
         else:
+            rospy.loginfo("No obstacles encountered")
+            self.front_obstacle_scan_processing = False
             return False
 
     def process_laser_scan(self, laser_scan):
+        if not self.last_robot_state in [RobotState.FORWARD, RobotState.STOP]:
+            rospy.loginfo("Ignoring laser scan request as robot state is %s", self.last_robot_state)
+            return None
+
+        rospy.loginfo("Processing laser scan to find direction")
         contiguous_pts = [ContiguousScanPoints()]
 
         # Find largest distance in scan
@@ -119,7 +144,7 @@ class LaserScanProcessor:
                 return ptset.get_angle()
 
         rospy.loginfo("No good heading except back")
-        return None
+        return -1
 
     def publish_picked_heading_scan(self, avg_angle, num_pts, laser_scan):
         scan = LaserScan()

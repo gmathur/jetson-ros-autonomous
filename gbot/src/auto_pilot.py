@@ -23,9 +23,11 @@ class AutoPilot:
 
     def check_laser_scan_for_obstacles(self):
         if not self.should_use_laser_scan():
-            return
+            return False
 
-        return self.laser_scan_processor.check_for_front_obstacles(self.last_laser_scan)
+        res = self.laser_scan_processor.check_for_front_obstacles(self.last_laser_scan)
+
+        return res if res is not None else False
 
     def scan_callback(self, data):
         self.last_laser_scan = data
@@ -103,9 +105,11 @@ class AutoPilot:
 
         # Turn towards angle or if none is found, reverse out
         if angle is None:
+            rospy.loginfo("Laser scan already being processed - dont do anything")
+        elif angle == -1:
             rospy.loginfo("Based on laser scans, no angle found - reversing")
             
-            self.drive.reverse()
+            self.driver.reverse()
             self.random_turn()
         else:
             rospy.loginfo("Based on laser scans, turning towards %f", angle)
