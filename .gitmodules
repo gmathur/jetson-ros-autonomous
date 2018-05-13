@@ -4,3 +4,6 @@
 [submodule "raspicam_node"]
 	path = raspicam_node
 	url = https://github.com/UbiquityRobotics/raspicam_node
+[submodule "ydlidar"]
+	path = ydlidar
+	url = https://github.com/EAIBOT/ydlidar
