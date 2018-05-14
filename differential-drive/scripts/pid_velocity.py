@@ -42,6 +42,7 @@ class PidVelocity():
         rospy.loginfo("%s started" % self.nodename)
         
         ### initialize variables
+        self.manual_drive = False
         self.target = 0
         self.motor = 0
         self.vel = 0
@@ -105,13 +106,22 @@ class PidVelocity():
         self.vel = 0.0
         
         # only do the loop if we've recently recieved a target velocity message
-        while not rospy.is_shutdown() and self.ticks_since_target < self.timeout_ticks:
-            self.calcVelocity()
-            self.doPid()
-            self.pub_motor.publish(self.motor)
+        while not rospy.is_shutdown():
+            execute = True
+            if self.manual_drive and self.ticks_since_target >= self.timeout_ticks:
+                execute = False
+                rospy.loginfo("Timed out")
+
+            if execute:
+                self.calcVelocity()
+                self.doPid()
+                if self.manual_drive:
+                    self.pub_motor.publish(self.motor)
             self.r.sleep()
             self.ticks_since_target += 1
-            if self.ticks_since_target == self.timeout_ticks:
+
+            if self.manual_drive and self.ticks_since_target == self.timeout_ticks:
+                rospy.loginfo("Timed out")
                 self.pub_motor.publish(0)
             
     #####################################################
@@ -167,7 +177,10 @@ class PidVelocity():
         pid_dt = pid_dt_duration.to_sec()
         self.prev_pid_time = rospy.Time.now()
         
-        self.error = self.target - self.vel
+        if self.manual_drive:
+            self.error = self.target - self.vel
+        else:
+            self.error = 0
         self.integral = self.integral + (self.error * pid_dt)
         # rospy.loginfo("i = i + (e * dt):  %0.3f = %0.3f + (%0.3f * %0.3f)" % (self.integral, self.integral, self.error, pid_dt))
         self.derivative = (self.error - self.previous_error) / pid_dt
@@ -182,7 +195,7 @@ class PidVelocity():
             self.motor = self.out_min
             self.integral = self.integral - (self.error * pid_dt)
       
-        if (self.target == 0):
+        if self.manual_drive and (self.target == 0):
             self.motor = 0
     
         rospy.logdebug("vel:%0.2f tar:%0.2f err:%0.2f int:%0.2f der:%0.2f ## motor:%d " % 
@@ -211,6 +224,7 @@ class PidVelocity():
     ######################################################
     def targetCallback(self, msg):
     ######################################################
+        self.manual_drive = True
         self.target = msg.data
         self.ticks_since_target = 0
         # rospy.logdebug("-D- %s targetCallback " % (self.nodename))
