@@ -7,6 +7,7 @@ from std_msgs.msg import Int16
 from robot_state import RobotState
 import pigpio
 from std_msgs.msg import Int16, String
+from gbot.msg import RobotCmd
 
 class EncoderCounter:
     def __init__(self, pi, pin, topic):
@@ -28,13 +29,13 @@ class EncoderCounter:
 
     def detect(self, gpio, level, tick):
         if self.increment_counter:
-            if self.count == 32768:
+            if self.count == 32767:
                 self.count = 0 # Wrap around
             else:
                 self.count += 1
         else:
             if self.count == 0:
-                self.count = 32768 # Wrap around
+                self.count = 32767 # Wrap around
             else:
                 self.count -= 1
 
@@ -52,10 +53,10 @@ class RobotEncoderController:
         self.lencoder = EncoderCounter(self.pi, 23, 'lwheel')
         self.rencoder = EncoderCounter(self.pi, 24, 'rwheel')
 
-        rospy.Subscriber("robot_commands", String, self.set_state, queue_size=1)
+        rospy.Subscriber("robot_commands", RobotCmd, self.set_state, queue_size=1)
 
     def set_state(self, data):
-        state = data.data
+        state = data.cmd
 
         if state == RobotState.FORWARD:
             self.lencoder.set_counter_positive(True)

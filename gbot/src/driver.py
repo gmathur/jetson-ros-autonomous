@@ -6,6 +6,7 @@ from track_encoders import TrackEncoders
 from robot_state import RobotState, CommandSource, RobotStateTracker
 from speed_tracker import SpeedTracker
 from std_msgs.msg import String
+from gbot.msg import RobotCmd
 
 class Driver:
     TURN_TIME_PER_RADIAN = 0.318
@@ -18,7 +19,7 @@ class Driver:
         self.track_encoders = TrackEncoders(self)
         self.emergency_stop = False
 
-        self.pub = rospy.Publisher("robot_commands", String, queue_size=1)
+        self.pub = rospy.Publisher("robot_commands", RobotCmd, queue_size=1)
 
     def open(self):
         self.driver.open()
@@ -44,7 +45,7 @@ class Driver:
         else:
             # Turn left
             self.execute_cmd(RobotState.LEFT)
-            self.track_angular_change(turn_angle=angle - 3.142)
+            self.track_angular_change(turn_angle=3.142 - (angle - 3.142)) # complement of angle
             self.execute_cmd(RobotState.STOP)
 
     def reverse(self):
@@ -63,7 +64,9 @@ class Driver:
         rospy.loginfo("Executing %s fwd speed: %d" % (cmd, self.speed_tracker.forward_speed))
         self.state_tracker.add(cmd)
         
-        data = String(cmd)
+        data = RobotCmd()
+        data.header.stamp = rospy.Time.now()
+        data.cmd = cmd
         self.pub.publish(data)
 
         if self.emergency_stop and cmd != RobotState.STOP:
@@ -129,6 +132,11 @@ if __name__== "__main__":
         driver.forward()
         time.sleep(1)
         driver.reverse()
+        time.sleep(1)
+        driver.turn_angle(0.7855)
+        time.sleep(1)
+        driver.turn_angle(5.4985)
+        time.sleep(1)
         driver.stop()
     finally:
         motor_driver.close()

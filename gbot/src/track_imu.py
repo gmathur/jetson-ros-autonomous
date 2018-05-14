@@ -9,8 +9,11 @@ import numpy as np
 from threading import Thread
 from sensor_msgs.msg import Imu
 from geometry_msgs.msg import Vector3
+from std_msgs.msg import String
+from robot_state import RobotState
+from gbot.msg import RobotCmd
 
-VERTICAL_ANGLE_THRESHOLD = 0.027
+VERTICAL_ANGLE_THRESHOLD = 0.03
 CONTIGUOUS_VERTICAL_PERIODS_THRESHOLD = 7
 
 def unit_vector(vector):
@@ -39,6 +42,7 @@ class TrackImu:
         self.baseline_euler = None
         self.last_euler = None
         self.last_imu = None
+        self.last_robot_state = RobotState.STOP
         self.start_vertical_angle = None
         self.analyzing_vertical_start = self.get_current_time()
         self.tracked_imu_periods = [0] * 20
@@ -47,6 +51,10 @@ class TrackImu:
 
         rospy.Subscriber("imu/data", Imu, self.imu_callback, queue_size=1)
         rospy.Subscriber("imu/euler", Vector3, self.euler_callback, queue_size=1)
+        rospy.Subscriber("robot_commands", RobotCmd, self.robot_cmd_callback, queue_size=1)
+
+    def robot_cmd_callback(self, data):
+        self.last_robot_state = data.cmd
 
     def reset(self):
         self.reset_imu = True
@@ -101,7 +109,7 @@ class TrackImu:
         return positive if positive > negative else negative
 
     def do_emergency_checks(self, data):
-        if self.start_vertical_angle is None:
+        if self.start_vertical_angle is None or self.last_robot_state == RobotState.STOP:
             self.start_vertical_tracking(data)
             return
 

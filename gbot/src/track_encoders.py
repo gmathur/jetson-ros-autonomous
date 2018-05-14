@@ -5,6 +5,7 @@ import math
 import rospy
 from std_msgs.msg import Int16, String
 from robot_state import RobotState
+from gbot.msg import RobotCmd
 
 class TrackEncoders:
     def __init__(self, driver):
@@ -15,13 +16,13 @@ class TrackEncoders:
         self.lmotor_reading = 0
         self.rmotor_reading = 0
         
-        rospy.Subscriber("robot_commands", String, self.robot_state_callback, queue_size=1)
+        rospy.Subscriber("robot_commands", RobotCmd, self.robot_state_callback, queue_size=1)
         rospy.Subscriber("lwheel", Int16, self.lwheel_callback, queue_size=1)
         rospy.Subscriber("rwheel", Int16, self.rwheel_callback, queue_size=1)
 
     def robot_state_callback(self, data):
-        if self.last_state != data.data:
-            self.last_state = data.data
+        if self.last_state != data.cmd:
+            self.last_state = data.cmd
             self.last_time = time.time()
 
     def lwheel_callback(self, data):

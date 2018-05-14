@@ -48,6 +48,7 @@ catkin_python_setup()
 add_message_files(
    FILES
    Proximity.msg
+   RobotCmd.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -79,7 +80,9 @@ generate_messages(
 ## LIBRARIES: libraries you create in this project that dependent projects also need
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
-catkin_package()
+catkin_package(
+    CATKIN_DEPENDS message_runtime
+)
 
 ###########
 ## Build ##

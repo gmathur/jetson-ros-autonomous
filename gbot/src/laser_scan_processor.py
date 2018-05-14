@@ -7,6 +7,7 @@ from robot_state import RobotState
 from gbot.msg import Proximity
 from sensor_msgs.msg import LaserScan
 from std_msgs.msg import String
+from gbot.msg import RobotCmd
 import numpy
 
 MARGIN = 0.1
@@ -56,15 +57,17 @@ class LaserScanProcessor:
         self.front_obstacles_pub = rospy.Publisher('scan_front_obstacles', LaserScan, queue_size=10)
         self.heading_pub = rospy.Publisher('scan_heading', LaserScan, queue_size=10)
         
-        rospy.Subscriber('robot_commands', String, self.robot_cmds_callback, queue_size=10)
-        self.last_robot_state = RobotState.FORWARD
+        rospy.Subscriber('robot_commands', RobotCmd, self.robot_cmds_callback, queue_size=10)
+        self.last_robot_state = None
         self.front_obstacle_scan_processing = False
 
     def robot_cmds_callback(self, data):
-        self.last_robot_state = data.data
+        self.last_robot_state = data
 
     def check_for_front_obstacles(self, laser_scan):
-        if not self.last_robot_state in [RobotState.FORWARD, RobotState.STOP]:
+        if self.last_robot_state and \
+                not self.last_robot_state.cmd in [RobotState.FORWARD, RobotState.STOP] and \
+                laser_scan.header.stamp > self.last_robot_state.header.stamp:
             # Dont process laser scans while turning
             return None
 
@@ -98,7 +101,9 @@ class LaserScanProcessor:
             return False
 
     def process_laser_scan(self, laser_scan):
-        if not self.last_robot_state in [RobotState.FORWARD, RobotState.STOP]:
+        if self.last_robot_state and \
+                not self.last_robot_state.cmd in [RobotState.FORWARD, RobotState.STOP] and \
+                laser_scan.header.stamp > self.last_robot_state.header.stamp:
             rospy.loginfo("Ignoring laser scan request as robot state is %s", self.last_robot_state)
             return None
 

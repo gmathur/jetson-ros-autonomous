@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import rospy
 from std_msgs.msg import String
+from gbot.msg import RobotCmd
 import pygame
 import os
 import sys
@@ -38,7 +39,7 @@ class Display:
         self.font = pygame.font.Font(font, 16)
         rospy.loginfo("Font load complete")
 
-        rospy.Subscriber("robot_commands", String, self.robot_state, queue_size=1)
+        rospy.Subscriber("robot_commands", RobotCmd, self.robot_state, queue_size=1)
 
     def quit(self):
         pygame.quit()
@@ -87,7 +88,7 @@ class Display:
         pygame.display.update()
 
     def robot_state(self, data):
-        self.display_text(data.data)
+        self.display_text(data.cmd)
 
     def clear(self):
         self.disp.fill((0,0,0))
