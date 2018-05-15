@@ -3,32 +3,13 @@
 
   <include file="$(find gbot)/launch/display.launch" />
 
-  <arg name="use_rviz" default="false" />
-
-  #### publish static transforms ###########
-
-  <node pkg="tf" type="static_transform_publisher" name="map_to_world"
-    args="0.0 0.0 0.0 0.0 0.0  0.0 /world /map 40" />
-
-  <arg name="publish_covariance" default="false"/>
-
-  <param name="/stamped_vel" value="false"/>
-
   #### Start LIDAR ###########
 
-  <include file="$(find ydlidar)/launch/lidar.launch" />
-
-  <group if="$(arg publish_covariance)">
-    <param name="laser_scan_matcher_node/do_compute_covariance" value="1"/>
-    <param name="laser_scan_matcher_node/publish_pose_with_covariance" value="true"/>
-    <param name="laser_scan_matcher_node/publish_pose_with_covariance_stamped" value="true"/>
-  </group>
+  <include file="$(find gbot)/launch/lidar.launch" />
 
   #### Start MPU 9255 driver ###########
 
-  <node pkg="i2c_imu" type="i2c_imu_node" name="i2c_imu" output="screen">
-      <rosparam file="$(find i2c_imu)/param/imu.yaml"/>
-  </node>
+  <include file="$(find gbot)/launch/imu.launch" />
 
   #### Start proximity scanning ###########
 

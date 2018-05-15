@@ -1,0 +1,13 @@
+<launch>
+  #### publish static transforms ###########
+
+  <node pkg="tf" type="static_transform_publisher" name="base_link_to_imu_link"
+    args="0.2245 0.0 0.2 0.12 0.0  0.0 /base_link /imu_link 40" />
+
+  #### Start LIDAR ###########
+
+  <node pkg="i2c_imu" type="i2c_imu_node" name="i2c_imu" output="screen">
+    <rosparam file="$(find i2c_imu)/param/imu.yaml"/>
+  </node>
+  
+</launch>
