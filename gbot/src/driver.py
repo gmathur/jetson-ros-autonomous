@@ -5,8 +5,46 @@ from track_imu import TrackImu
 from track_encoders import TrackEncoders
 from robot_state import RobotState, CommandSource, RobotStateTracker
 from speed_tracker import SpeedTracker
-from std_msgs.msg import String
+from std_msgs.msg import String, Int16
 from gbot.msg import RobotCmd
+
+class EncoderMotionTracker:
+    def __init__(self):
+        rospy.Subscriber("lwheel", Int16, self.lwheel_callback, queue_size=1)
+        rospy.Subscriber("rwheel", Int16, self.rwheel_callback, queue_size=1)
+        self.lwheel_start = None
+        self.rwheel_start = None
+        self.lwheel_last = None
+        self.rwheel_last = None
+
+        self.reset_lwheel = True
+        self.reset_rwheel = True
+
+    def lwheel_callback(self, data):
+        if self.reset_lwheel:
+            self.reset_lwheel = False
+            self.lwheel_start = data.data
+
+        self.lwheel_last = data.data
+
+    def rwheel_callback(self, data):
+        if self.reset_rwheel:
+            self.reset_rwheel = False
+            self.rwheel_start = data.data
+        
+        self.rwheel_last = data.data
+
+    def lwheel_delta(self):
+        return self.lwheel_last - self.lwheel_start
+
+    def rwheel_delta(self):
+        return self.rwheel_last - self.rwheel_start
+
+    def did_robot_move(self):
+        movement = self.lwheel_delta() + self.rwheel_delta()
+        rospy.loginfo("Robot moved %d encoder counts", movement)
+
+        return True if movement > 1 else False
 
 class Driver:
     TURN_TIME_PER_RADIAN = 0.318
@@ -17,6 +55,7 @@ class Driver:
         self.state_tracker = RobotStateTracker()
         self.track_imu = TrackImu(self)
         self.track_encoders = TrackEncoders(self)
+        self.motion_tracker = EncoderMotionTracker()
         self.emergency_stop = False
 
         self.pub = rospy.Publisher("robot_commands", RobotCmd, queue_size=1)
@@ -36,17 +75,31 @@ class Driver:
     def turn_right(self):
         self.turn_angle(1.57)
 
-    def turn_angle(self, angle):
+    def turn_angle(self, angle, left_obstacle=False, right_obstacle=False):
+        ## Straight ahead is 0 radians, increasing clockwise to 2 pi
         if angle <= 3.142:
-            # Turn right
-            self.execute_cmd(RobotState.RIGHT)
-            self.track_angular_change(turn_angle=angle)
-            self.execute_cmd(RobotState.STOP)
+            if right_obstacle is False:
+                # Turn right
+                self.execute_cmd(RobotState.RIGHT)
+                self.track_angular_change(turn_angle=angle)
+                self.execute_cmd(RobotState.STOP)
+            else:
+                # Turn right via left
+                self.execute_cmd(RobotState.LEFT)
+                self.track_angular_change(turn_angle=3.142 + (3.142 - angle))
+                self.execute_cmd(RobotState.STOP)
+
         else:
-            # Turn left
-            self.execute_cmd(RobotState.LEFT)
-            self.track_angular_change(turn_angle=3.142 - (angle - 3.142)) # complement of angle
-            self.execute_cmd(RobotState.STOP)
+            if left_obstacle is False:
+                # Turn left
+                self.execute_cmd(RobotState.LEFT)
+                self.track_angular_change(turn_angle=3.142 - (angle - 3.142)) # complement of angle
+                self.execute_cmd(RobotState.STOP)
+            else:
+                # Turn left via right
+                self.execute_cmd(RobotState.RIGHT)
+                self.track_angular_change(turn_angle=angle) # This is a clockwise turn - go through full angle
+                self.execute_cmd(RobotState.STOP)
 
     def reverse(self):
         self.execute_cmd(RobotState.REVERSE)
@@ -137,6 +190,11 @@ if __name__== "__main__":
         time.sleep(1)
         driver.turn_angle(5.4985)
         time.sleep(1)
+        driver.turn_angle(1.571, False, True)
+        time.sleep(1)
+        driver.turn_angle(4.713, True, False)
+        time.sleep(1)
+
         driver.stop()
     finally:
         motor_driver.close()

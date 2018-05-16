@@ -101,19 +101,21 @@ class AutoPilot:
             self.driver.turn_right()
 
     def process_laser_scan(self):
-        angle = self.laser_scan_processor.process_laser_scan(self.last_laser_scan)
+        angle, left_obstacle, right_obstacle = self.laser_scan_processor.process_laser_scan(self.last_laser_scan)
 
         # Turn towards angle or if none is found, reverse out
         if angle is None:
             rospy.loginfo("Laser scan already being processed - dont do anything")
-        elif angle == -1:
-            rospy.loginfo("Based on laser scans, no angle found - reversing")
+        elif angle == -1 or (left_obstacle and right_obstacle):
+            rospy.loginfo("Based on laser scans, no angle found - reversing left_obstacle %s right_obstacle %s",
+                    left_obstacle, right_obstacle)
             
             self.driver.reverse()
             self.random_turn()
         else:
-            rospy.loginfo("Based on laser scans, turning towards %f", angle)
+            rospy.loginfo("Based on laser scans, turning towards %f left_obstacle %s, right_obstacle %s", 
+                    angle, left_obstacle, right_obstacle)
 
             # Turn in that direction
-            self.driver.turn_angle(angle)
+            self.driver.turn_angle(angle, left_obstacle, right_obstacle)
 

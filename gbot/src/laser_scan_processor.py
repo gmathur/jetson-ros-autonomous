@@ -13,6 +13,7 @@ import numpy
 MARGIN = 0.1
 MIN_DIST = 0.3
 FRONT_MIN_DIST = 0.3
+SIDE_MIN_DIST = 0.2
 
 class ContiguousScanPoints:
 
@@ -80,32 +81,50 @@ class LaserScanProcessor:
         min_range = int(((3.142 / 6) * 5) / laser_scan.angle_increment)
         max_range = int(((3.142 / 6) * 7) / laser_scan.angle_increment)
 
+        ret_val = self.is_obstacle_present(laser_scan, min_range, max_range, FRONT_MIN_DIST, 3)
+        self.front_obstacle_scan_processing = False
+            
+        return ret_val
+
+    def is_obstacle_present(self, laser_scan, min_range, max_range, dist_threshold, pt_threshold=3):
         num_matches = 0
         ptset = ContiguousScanPoints()
         for i in range(min_range, max_range):
             current_angle = i * laser_scan.angle_increment
             pt = laser_scan.ranges[i]
-            if pt > 0 and pt < FRONT_MIN_DIST:
+            if pt > 0 and pt < dist_threshold:
                 num_matches += 1
                 ptset.add(1.0, current_angle, i)
 
-        if num_matches > 3:
-            rospy.loginfo("Front obstacle encountered")
+        if num_matches > pt_threshold:
+            rospy.loginfo("Obstacle encountered min angle %f max angle %f", min_range, max_range)
             self.publish_obstacles_scan([ptset], len(laser_scan.ranges), laser_scan,
                     self.front_obstacles_pub)
-            self.front_obstacle_scan_processing = False
             return True
         else:
-            rospy.loginfo("No obstacles encountered")
-            self.front_obstacle_scan_processing = False
             return False
+ 
+    def check_for_side_obstacles(self, laser_scan):
+        # Calculate range of laser scan pts to evaluate
+        left_min_range = int(((3.142 / 6) * 7) / laser_scan.angle_increment)
+        left_max_range = int(((3.142 / 6) * 11) / laser_scan.angle_increment)
+
+        left_obstacle_present = self.is_obstacle_present(laser_scan, left_min_range, left_max_range, SIDE_MIN_DIST, 3)
+
+        right_min_range = int(((3.142 / 6) * 1) / laser_scan.angle_increment)
+        right_max_range = int(((3.142 / 6) * 5) / laser_scan.angle_increment)
+
+        right_obstacle_present = self.is_obstacle_present(laser_scan, right_min_range, right_max_range, SIDE_MIN_DIST, 3)
+
+        return left_obstacle_present, right_obstacle_present
+
 
     def process_laser_scan(self, laser_scan):
         if self.last_robot_state and \
                 not self.last_robot_state.cmd in [RobotState.FORWARD, RobotState.STOP] and \
                 laser_scan.header.stamp > self.last_robot_state.header.stamp:
             rospy.loginfo("Ignoring laser scan request as robot state is %s", self.last_robot_state)
-            return None
+            return None, None, None
 
         rospy.loginfo("Processing laser scan to find direction")
         contiguous_pts = [ContiguousScanPoints()]
@@ -139,17 +158,19 @@ class LaserScanProcessor:
         contiguous_pts = sorted(contiguous_pts, key=lambda item: item.get_median(), reverse=True)
         
         # Pick the largest one that is not right behind
+        left_obstacle, right_obstacle = self.check_for_side_obstacles(laser_scan)
         for ptset in contiguous_pts:
             current_median = ptset.get_median()
             if current_median >= 3 and current_median <= 3.28:
                 continue
             else:
                 self.publish_picked_heading_scan(ptset.get_angle(), len(laser_scan.ranges), laser_scan)
-                rospy.loginfo("Picking heading %f with median dist %f", ptset.get_angle(), current_median)
-                return ptset.get_angle()
+                rospy.loginfo("Picking heading %f with median dist %f left_obstacle %s right_obstacle %s", 
+                        ptset.get_angle(), current_median, left_obstacle, right_obstacle)
+                return ptset.get_angle(), left_obstacle, right_obstacle
 
-        rospy.loginfo("No good heading except back")
-        return -1
+        rospy.loginfo("No good heading except reverse left_obstacle %s right_obstacle %s", left_obstacle, right_obstacle)
+        return -1, left_obstacle, right_obstacle
 
     def publish_picked_heading_scan(self, avg_angle, num_pts, laser_scan):
         scan = LaserScan()
