@@ -1,10 +1,11 @@
 <launch>
-  <node name="image_view" pkg="image_view" type="image_view" respawn="false" output="screen">
-    <remap from="/image" to="/raspicam_node/image" />
-    <rosparam param="image_transport">compressed</rosparam>
-  </node>
-
   <node pkg="rviz" type="rviz" name="rviz"
           args="-d $(find gbot)/rviz/live-mapping.rviz"/>
 
+  #### Start object detection ###########
+  <include file="$(find gbot)/launch/dnn_detect.launch" />
+
+  <node name="image_view" pkg="image_view" type="image_view" respawn="false" output="screen">
+    <remap from="/image" to="/dnn_images" />
+  </node>
 </launch>
