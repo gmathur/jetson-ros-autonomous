@@ -12,7 +12,7 @@ class DistanceScanner:
 
     def spin(self):
         while not rospy.is_shutdown():
-            # Scan left, straight, right
+            # Scan straight
             distances = self.scanner.scan()
     
             if distances[0] == -1:
@@ -24,11 +24,8 @@ class DistanceScanner:
             msg = Proximity()
             msg.stamp = rospy.Time.now()
             msg.left = distances[0]
-            msg.right = distances[1]
-            if distances[0] < distances[1]:
-                msg.straight = distances[0]
-            else:
-                msg.straight = distances[1]
+            msg.right = distances[0]
+            msg.straight = distances[0]
             
             self.pub.publish(msg)
 
