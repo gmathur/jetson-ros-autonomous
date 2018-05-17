@@ -47,7 +47,8 @@ class EncoderMotionTracker:
         return True if movement > 1 else False
 
 class Driver:
-    TURN_TIME_PER_RADIAN = 0.318
+    LEFT_TURN_TIME_PER_RADIAN = 0.27
+    RIGHT_TURN_TIME_PER_RADIAN = 0.33
 
     def __init__(self, dimension_driver):
         self.driver = dimension_driver
@@ -81,24 +82,24 @@ class Driver:
             if right_obstacle is False:
                 # Turn right
                 self.execute_cmd(RobotState.RIGHT)
-                self.track_angular_change(turn_angle=angle)
+                self.track_angular_change(RobotState.RIGHT, angle)
                 self.execute_cmd(RobotState.STOP)
             else:
                 # Turn right via left
                 self.execute_cmd(RobotState.LEFT)
-                self.track_angular_change(turn_angle=3.142 + (3.142 - angle))
+                self.track_angular_change(RobotState.LEFT, 3.142 + (3.142 - angle))
                 self.execute_cmd(RobotState.STOP)
 
         else:
             if left_obstacle is False:
                 # Turn left
                 self.execute_cmd(RobotState.LEFT)
-                self.track_angular_change(turn_angle=3.142 - (angle - 3.142)) # complement of angle
+                self.track_angular_change(RobotState.LEFT, 3.142 - (angle - 3.142)) # complement of angle
                 self.execute_cmd(RobotState.STOP)
             else:
                 # Turn left via right
                 self.execute_cmd(RobotState.RIGHT)
-                self.track_angular_change(turn_angle=angle) # This is a clockwise turn - go through full angle
+                self.track_angular_change(RobotState.RIGHT, angle) # This is a clockwise turn - go through full angle
                 self.execute_cmd(RobotState.STOP)
 
     def reverse(self):
@@ -139,20 +140,24 @@ class Driver:
             self.speed_tracker.reset_forward_speed()
 
 
-    def track_angular_change(self, turn_angle=1.57):
+    def track_angular_change(self, state, turn_angle):
 #        if self.track_imu.should_use_imu():
 #            rospy.loginfo("Tracking IMU change for turns")
 #            self.track_imu_for_angular_change(turn_angle)
 #        else:
 #            rospy.logwarn("IMU data not available - falling back to time based turns")
-            self.track_time_for_angular_change(turn_angle)
+            self.track_time_for_angular_change(state, turn_angle)
 
-    def track_time_for_angular_change(self, turn_angle=1.57):
-        sleep_time = Driver.TURN_TIME_PER_RADIAN * turn_angle
+    def track_time_for_angular_change(self, state, turn_angle):
+        sleep_time = 0.0
+        if state == RobotState.LEFT:
+            sleep_time = Driver.LEFT_TURN_TIME_PER_RADIAN * turn_angle
+        else:
+            sleep_time = Driver.RIGHT_TURN_TIME_PER_RADIAN * turn_angle
         sleep_time = 0.1 if sleep_time < 0.1 else sleep_time
         time.sleep(sleep_time)
 
-    def track_imu_for_angular_change(self, turn_angle=1.57):
+    def track_imu_for_angular_change(self, turn_angle):
         start_time = time.time()
 
         self.track_imu.reset()

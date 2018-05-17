@@ -9,9 +9,9 @@ from std_msgs.msg import String, Int16
 def main(win):
     locale.setlocale(locale.LC_ALL,"")
     rospy.init_node('manual_controller')
-    camera_pub = rospy.Publisher("camera_commands", String, queue_size=10)
-    lmotor_pub = rospy.Publisher("lmotor", Int16, queue_size=10)
-    rmotor_pub = rospy.Publisher("rmotor", Int16, queue_size=10)
+    camera_pub = rospy.Publisher("camera_commands", String, queue_size=1)
+    lmotor_pub = rospy.Publisher("lmotor", Int16, queue_size=1)
+    rmotor_pub = rospy.Publisher("rmotor", Int16, queue_size=1)
 
     camera_cmds = {
         "W": "U",
