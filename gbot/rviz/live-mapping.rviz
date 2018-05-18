@@ -10,6 +10,7 @@ Panels:
         - /Grid1/Offset1
         - /LaserScan1
         - /Map1
+        - /Map1/Status1
         - /Imu1
         - /TF1
         - /LaserScan2
@@ -36,7 +37,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: LaserScan
 Visualization Manager:
   Class: ""
   Displays:
@@ -101,24 +102,38 @@ Visualization Manager:
     - Alpha: 1
       Class: rviz_plugin_tutorials/Imu
       Color: 204; 51; 204
-      Enabled: true
+      Enabled: false
       History Length: 1
       Name: Imu
       Topic: /imu/data
       Unreliable: false
-      Value: true
+      Value: false
     - Class: rviz/TF
       Enabled: true
       Frame Timeout: 15
       Frames:
         All Enabled: true
+        base_link:
+          Value: true
+        imu_link:
+          Value: true
+        laser:
+          Value: true
+        map:
+          Value: true
+        odom:
+          Value: true
+        world:
+          Value: true
       Marker Scale: 2
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
-        {}
+        world:
+          map:
+            {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -249,7 +264,7 @@ Visualization Manager:
   Global Options:
     Background Color: 48; 48; 48
     Default Light: true
-    Fixed Frame: laser
+    Fixed Frame: world
     Frame Rate: 30
   Name: root
   Tools:
@@ -285,10 +300,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 1.56979632
+      Pitch: 1.17979658
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.85039377
+      Yaw: 2.07539511
     Saved: ~
 Window Geometry:
   Displays:
