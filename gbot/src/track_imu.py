@@ -14,7 +14,8 @@ from robot_state import RobotState
 from gbot.msg import RobotCmd
 
 VERTICAL_ANGLE_THRESHOLD = 0.03
-CONTIGUOUS_VERTICAL_PERIODS_THRESHOLD = 7
+FWD_CONTIGUOUS_VERTICAL_PERIODS_THRESHOLD = 7
+TURN_CONTIGUOUS_VERTICAL_PERIODS_THRESHOLD = 12
 
 def unit_vector(vector):
     """ Returns the unit vector of the vector.  """
@@ -121,13 +122,15 @@ class TrackImu:
 
         # Time is up
         delta = abs(math.sin(data.y)) - self.start_vertical_angle
+        num_periods_threshold = TURN_CONTIGUOUS_VERTICAL_PERIODS_THRESHOLD if self.last_robot_state in [RobotState.LEFT, RobotState.RIGHT] \
+                else FWD_CONTIGUOUS_VERTICAL_PERIODS_THRESHOLD
 
         if abs(delta) > VERTICAL_ANGLE_THRESHOLD:
             self.tracked_imu_periods[self.tracked_imu_period_index] = 1 if delta > 0 else -1
             
             contiguous_vertical_imu_periods = self.get_threshold_exeeded_periods()
             rospy.loginfo("Current vertical delta %f self.contiguous_vertical_imu_periods %d", delta, contiguous_vertical_imu_periods)
-            if contiguous_vertical_imu_periods >= CONTIGUOUS_VERTICAL_PERIODS_THRESHOLD:
+            if contiguous_vertical_imu_periods >= num_periods_threshold:
                 rospy.logerr("********************** EMERGENCY STOP! Vertical change %f **********************", delta)
                 self.driver.do_emergency_stop()
         else:
