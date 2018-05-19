@@ -5,7 +5,7 @@
 
   #### Start pilot program ###########
 
-  <node pkg="gbot" type="robot_pilot.py" name="robot_pilot" output="screen" >
+  <node pkg="gbot" type="robot_pilot.py" name="robot_pilot" output="screen" required="true">
   </node>
 
 </launch>

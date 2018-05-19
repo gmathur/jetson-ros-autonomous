@@ -40,6 +40,9 @@ class RobotStateTracker:
             return self.states[len(self.states)-1]
 
     def set_last_dist(self, dist):
+        if dist is None:
+            return
+
         self.dist = dist
 
     def get_last_dist(self):

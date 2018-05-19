@@ -18,7 +18,7 @@ class PilotInit:
         self.driver.open()
 
     def start(self):
-        rospy.spin()
+        self.auto_pilot.spin()
 
     def close(self):
         self.driver.stop()

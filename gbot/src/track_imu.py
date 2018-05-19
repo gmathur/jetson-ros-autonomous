@@ -13,9 +13,9 @@ from std_msgs.msg import String
 from robot_state import RobotState
 from gbot.msg import RobotCmd
 
-VERTICAL_ANGLE_THRESHOLD = 0.03
-FWD_CONTIGUOUS_VERTICAL_PERIODS_THRESHOLD = 7
-TURN_CONTIGUOUS_VERTICAL_PERIODS_THRESHOLD = 12
+VERTICAL_ANGLE_THRESHOLD = 0.04
+FWD_CONTIGUOUS_VERTICAL_PERIODS_THRESHOLD = 5
+TURN_CONTIGUOUS_VERTICAL_PERIODS_THRESHOLD = 24
 
 def unit_vector(vector):
     """ Returns the unit vector of the vector.  """
@@ -46,7 +46,7 @@ class TrackImu:
         self.last_robot_state = RobotState.STOP
         self.start_vertical_angle = None
         self.analyzing_vertical_start = self.get_current_time()
-        self.tracked_imu_periods = [0] * 20
+        self.reset_imu_tracking()
         self.tracked_imu_period_index  = 0
         self.driver = driver
 
@@ -54,7 +54,12 @@ class TrackImu:
         rospy.Subscriber("imu/euler", Vector3, self.euler_callback, queue_size=1)
         rospy.Subscriber("robot_commands", RobotCmd, self.robot_cmd_callback, queue_size=1)
 
+    def reset_imu_tracking(self):
+        self.tracked_imu_periods = [0] * 20
+
     def robot_cmd_callback(self, data):
+        if self.last_robot_state != data.cmd:
+            self.reset_imu_tracking()
         self.last_robot_state = data.cmd
 
     def reset(self):
@@ -114,7 +119,7 @@ class TrackImu:
             self.start_vertical_tracking(data)
             return
 
-        if self.get_current_time() - self.analyzing_vertical_start < 0.01:
+        if self.get_current_time() - self.analyzing_vertical_start < 0.005:
             return
 
         if self.start_vertical_angle is None:

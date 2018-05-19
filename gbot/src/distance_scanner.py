@@ -22,7 +22,7 @@ class DistanceScanner:
             rospy.loginfo("Distances %s" % (distances))
 
             msg = Proximity()
-            msg.stamp = rospy.Time.now()
+            msg.header.stamp = rospy.Time.now()
             msg.left = distances[0]
             msg.right = distances[0]
             msg.straight = distances[0]

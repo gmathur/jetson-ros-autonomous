@@ -4,7 +4,6 @@ import random
 import threading
 import time
 from robot_state import RobotState
-from gbot.msg import Proximity
 from sensor_msgs.msg import LaserScan
 from std_msgs.msg import String
 from gbot.msg import RobotCmd
@@ -66,12 +65,6 @@ class LaserScanProcessor:
         self.last_robot_state = data
 
     def check_for_front_obstacles(self, laser_scan):
-        if self.last_robot_state and \
-                not self.last_robot_state.cmd in [RobotState.FORWARD, RobotState.STOP] and \
-                laser_scan.header.stamp > self.last_robot_state.header.stamp:
-            # Dont process laser scans while turning
-            return None
-
         if self.front_obstacle_scan_processing:
             return None
 

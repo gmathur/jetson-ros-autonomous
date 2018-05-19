@@ -27,6 +27,9 @@ class SpeedTracker:
                 self.forward_speed = SpeedTracker.MAX_SPEED
 
     def adjust_speed(self, min_dist, last_dist):
+        if min_dist is None or last_dist is None:
+            return
+
         if min_dist > 70 or min_dist >= (last_dist - 2):
             self.increase_forward_speed()
             rospy.loginfo("min dist: %d, last dist %d, Increased speed to %d" % (min_dist, last_dist, self.forward_speed))

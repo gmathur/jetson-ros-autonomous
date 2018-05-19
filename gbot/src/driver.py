@@ -47,8 +47,8 @@ class EncoderMotionTracker:
         return True if movement > 1 else False
 
 class Driver:
-    LEFT_TURN_TIME_PER_RADIAN = 0.27
-    RIGHT_TURN_TIME_PER_RADIAN = 0.33
+    LEFT_TURN_TIME_PER_RADIAN = 0.26
+    RIGHT_TURN_TIME_PER_RADIAN = 0.28
 
     def __init__(self, dimension_driver):
         self.driver = dimension_driver
