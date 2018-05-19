@@ -17,13 +17,7 @@ class ManualPilot:
 
     def process(self, motor_num, data):
         if motor_num == 1:
-            if data >= 0:
-                self.driver.send_command(0, data.data)
-            else:
-                self.driver.send_command(4, data.data)
+            self.driver.send_lmotor_command(data.data)
         else:
-            if data >= 0:
-                self.driver.send_command(0, data.data)
-            else:
-                self.driver.send_command(5, data.data)
+            self.driver.send_rmotor_command(data.data)
 

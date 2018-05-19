@@ -36,28 +36,35 @@ class DimensionDriver:
         self.ser.write(msg)
         self.ser.flush()
 
-    def get_speeds(self, speed):
-        return int(speed * DimensionDriver.MOTOR_1_MULTIPLIER), int(speed * DimensionDriver.MOTOR_2_MULTIPLIER)
+    def send_lmotor_command(self, speed):
+        left = int(speed * DimensionDriver.MOTOR_1_MULTIPLIER)
+        if speed >= 0:
+            self.send_command(0, left)
+        else:
+            self.send_command(1, -left)
+
+    def send_rmotor_command(self, speed):
+        right = int(speed * DimensionDriver.MOTOR_2_MULTIPLIER)
+        if speed >= 0:
+            self.send_command(4, right)
+        else:
+            self.send_command(5, -right)
 
     def drive_forward(self, speed):
-        left, right = self.get_speeds(speed)
-        self.send_command(0, left)
-        self.send_command(4, right)
+        self.send_lmotor_command(speed)
+        self.send_rmotor_command(speed)
 
     def drive_backward(self, speed):
-        left, right = self.get_speeds(speed)
-        self.send_command(1, left)
-        self.send_command(5, right)
+        self.send_lmotor_command(-speed)
+        self.send_rmotor_command(-speed)
 
     def turn_right(self, speed):
-        left, right = self.get_speeds(speed)
-        self.send_command(0, left)
-        self.send_command(5, right)
+        self.send_lmotor_command(speed)
+        self.send_rmotor_command(-speed)
     
     def turn_left(self, speed):
-        left, right = self.get_speeds(speed)
-        self.send_command(1, left)
-        self.send_command(4, right)
+        self.send_lmotor_command(-speed)
+        self.send_rmotor_command(speed)
 
     def stop(self):
         self.drive_forward(0)
