@@ -1,0 +1,4 @@
+<launch>
+  <node pkg="gbot" type="driver_node.py" name="driver_node" output="screen" required="true" />
+
+</launch>

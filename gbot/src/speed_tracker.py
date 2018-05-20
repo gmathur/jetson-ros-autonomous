@@ -9,7 +9,6 @@ class SpeedTracker:
     def __init__(self):
         self.reset_forward_speed()
         self.reverse_speed = 100
-        self.turn_speed = 90
 
     def reset_forward_speed(self):
         self.forward_speed = SpeedTracker.MIN_SPEED
@@ -30,7 +29,7 @@ class SpeedTracker:
         if min_dist is None or last_dist is None:
             return
 
-        if min_dist > 70 or min_dist >= (last_dist - 2):
+        if min_dist > 0.70 or min_dist >= (last_dist - 0.05):
             self.increase_forward_speed()
             rospy.loginfo("min dist: %d, last dist %d, Increased speed to %d" % (min_dist, last_dist, self.forward_speed))
         else:

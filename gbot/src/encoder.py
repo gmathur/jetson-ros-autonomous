@@ -67,9 +67,13 @@ class RobotEncoderController:
         elif state == RobotState.LEFT:
             self.lencoder.set_counter_positive(False)
             self.rencoder.set_counter_positive(True)
-        elif state == RobotState.FORWARD:
+        elif state == RobotState.RIGHT:
             self.lencoder.set_counter_positive(True)
             self.rencoder.set_counter_positive(False)
+        else:
+            # Steering
+            self.lencoder.set_counter_positive(True)
+            self.rencoder.set_counter_positive(True)
 
         self.lencoder.publish()
         self.rencoder.publish()

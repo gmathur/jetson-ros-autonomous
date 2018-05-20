@@ -8,61 +8,23 @@ from speed_tracker import SpeedTracker
 from std_msgs.msg import String, Int16
 from gbot.msg import RobotCmd
 
-class EncoderMotionTracker:
-    def __init__(self):
-        rospy.Subscriber("lwheel", Int16, self.lwheel_callback, queue_size=1)
-        rospy.Subscriber("rwheel", Int16, self.rwheel_callback, queue_size=1)
-        self.lwheel_start = None
-        self.rwheel_start = None
-        self.lwheel_last = None
-        self.rwheel_last = None
-
-        self.reset_lwheel = True
-        self.reset_rwheel = True
-
-    def lwheel_callback(self, data):
-        if self.reset_lwheel:
-            self.reset_lwheel = False
-            self.lwheel_start = data.data
-
-        self.lwheel_last = data.data
-
-    def rwheel_callback(self, data):
-        if self.reset_rwheel:
-            self.reset_rwheel = False
-            self.rwheel_start = data.data
-        
-        self.rwheel_last = data.data
-
-    def lwheel_delta(self):
-        return self.lwheel_last - self.lwheel_start
-
-    def rwheel_delta(self):
-        return self.rwheel_last - self.rwheel_start
-
-    def did_robot_move(self):
-        movement = self.lwheel_delta() + self.rwheel_delta()
-        rospy.loginfo("Robot moved %d encoder counts", movement)
-
-        return True if movement > 1 else False
-
 class Driver:
     LEFT_TURN_TIME_PER_RADIAN = 0.26
     RIGHT_TURN_TIME_PER_RADIAN = 0.28
 
-    def __init__(self, dimension_driver):
-        self.driver = dimension_driver
+    def __init__(self):
         self.speed_tracker = SpeedTracker()
         self.state_tracker = RobotStateTracker()
         self.track_imu = TrackImu(self)
         self.track_encoders = TrackEncoders(self)
-        self.motion_tracker = EncoderMotionTracker()
         self.emergency_stop = False
 
         self.pub = rospy.Publisher("robot_commands", RobotCmd, queue_size=1)
+        self.lmotor_pub = rospy.Publisher("lmotor", Int16, queue_size=1)
+        self.rmotor_pub = rospy.Publisher("rmotor", Int16, queue_size=1)
 
     def open(self):
-        self.driver.open()
+        pass
 
     def spin(self):
         pass
@@ -76,10 +38,10 @@ class Driver:
     def turn_right(self):
         self.turn_angle(1.57)
 
-    def turn_angle(self, angle, left_obstacle=False, right_obstacle=False):
+    def stop_and_turn_robot(self, angle, left_obstacle, right_obstacle):
         ## Straight ahead is 0 radians, increasing clockwise to 2 pi
         if angle <= 3.142:
-            if right_obstacle is False:
+            if right_obstacle == False:
                 # Turn right
                 self.execute_cmd(RobotState.RIGHT)
                 self.track_angular_change(RobotState.RIGHT, angle)
@@ -89,18 +51,43 @@ class Driver:
                 self.execute_cmd(RobotState.LEFT)
                 self.track_angular_change(RobotState.LEFT, 3.142 + (3.142 - angle))
                 self.execute_cmd(RobotState.STOP)
-
         else:
-            if left_obstacle is False:
+            if left_obstacle == False:
                 # Turn left
+                complement = 3.142 - (angle - 3.142)
                 self.execute_cmd(RobotState.LEFT)
-                self.track_angular_change(RobotState.LEFT, 3.142 - (angle - 3.142)) # complement of angle
+                self.track_angular_change(RobotState.LEFT, complement) # complement of angle
                 self.execute_cmd(RobotState.STOP)
             else:
                 # Turn left via right
                 self.execute_cmd(RobotState.RIGHT)
                 self.track_angular_change(RobotState.RIGHT, angle) # This is a clockwise turn - go through full angle
                 self.execute_cmd(RobotState.STOP)
+
+    def compute_steering_ratio(self, angle):
+        ratio = angle / 2.0
+        return 1 - ratio
+
+    def steer_robot(self, angle):
+        if angle <= 3.142:
+            # Turn right
+            steering_ratio = self.compute_steering_ratio(angle)
+            self.execute_cmd(RobotState.STEER_RIGHT, steering_ratio)
+        else:
+            # Turn left
+            complement = 3.142 - (angle - 3.142)
+            steering_ratio = self.compute_steering_ratio(complement)
+            self.execute_cmd(RobotState.STEER_LEFT, steering_ratio)
+
+    def turn_angle(self, angle, left_obstacle=False, right_obstacle=False):
+        if self.state_tracker.get_last_state() == RobotState.STOP:
+            rospy.loginfo("Stopping & turning robot angle %f left_obstacle %s right_obstacle %s",
+                    angle, left_obstacle, right_obstacle)
+            self.stop_and_turn_robot(angle, left_obstacle, right_obstacle)
+        else:
+            rospy.loginfo("Steering robot angle %f left_obstacle %s right_obstacle %s",
+                    angle, left_obstacle, right_obstacle)
+            self.steer_robot(angle)
 
     def reverse(self):
         self.execute_cmd(RobotState.REVERSE)
@@ -114,8 +101,9 @@ class Driver:
         self.stop()
         self.emergency_stop = True
 
-    def execute_cmd(self, cmd):
-        rospy.loginfo("Executing %s fwd speed: %d" % (cmd, self.speed_tracker.forward_speed))
+    def execute_cmd(self, cmd, steering_ratio=1.0):
+        rospy.loginfo("Executing %s fwd speed: %d steering ratio: %f", cmd, self.speed_tracker.forward_speed,
+                steering_ratio)
         self.state_tracker.add(cmd)
         
         data = RobotCmd()
@@ -127,18 +115,33 @@ class Driver:
              rospy.logerr("Emergency stop. Ignoring %s command", cmd)
              return
         
+        lmotor_msg = Int16()
+        rmotor_msg = Int16()
         if cmd == RobotState.FORWARD:
-            self.driver.drive_forward(self.speed_tracker.forward_speed)
+            lmotor_msg.data = self.speed_tracker.forward_speed
+            rmotor_msg.data = self.speed_tracker.forward_speed
         elif cmd == RobotState.REVERSE:
-            self.driver.drive_backward(self.speed_tracker.reverse_speed)
+            lmotor_msg.data = -self.speed_tracker.reverse_speed
+            rmotor_msg.data = -self.speed_tracker.reverse_speed
         elif cmd == RobotState.LEFT:
-            self.driver.turn_left(self.speed_tracker.turn_speed)
+            lmotor_msg.data = -self.speed_tracker.forward_speed
+            rmotor_msg.data = self.speed_tracker.forward_speed
         elif cmd == RobotState.RIGHT:
-            self.driver.turn_right(self.speed_tracker.turn_speed)
+            lmotor_msg.data = self.speed_tracker.forward_speed
+            rmotor_msg.data = -self.speed_tracker.forward_speed
+        elif cmd == RobotState.STEER_LEFT:
+            lmotor_msg.data = int(self.speed_tracker.forward_speed * steering_ratio)
+            rmotor_msg.data = self.speed_tracker.forward_speed
+        elif cmd == RobotState.STEER_RIGHT:
+            lmotor_msg.data = self.speed_tracker.forward_speed
+            rmotor_msg.data = int(self.speed_tracker.forward_speed * steering_ratio)
         elif cmd == RobotState.STOP:
-            self.driver.stop()
+            lmotor_msg.data = 0
+            rmotor_msg.data = 0
             self.speed_tracker.reset_forward_speed()
 
+        self.lmotor_pub.publish(lmotor_msg)
+        self.rmotor_pub.publish(rmotor_msg)
 
     def track_angular_change(self, state, turn_angle):
 #        if self.track_imu.should_use_imu():
@@ -179,10 +182,11 @@ if __name__== "__main__":
     
     rospy.init_node("driver")
     motor_driver = DimensionDriver(128, '/dev/ttyUSB0')
-    driver = Driver(motor_driver)
-    driver.open()
+    driver = Driver()
 
     try:
+        motor_driver.open()
+        driver.open()
         driver.turn_left()
         time.sleep(1)
         driver.turn_right()

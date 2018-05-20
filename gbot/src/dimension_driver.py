@@ -38,14 +38,14 @@ class DimensionDriver:
 
     def send_lmotor_command(self, speed):
         left = int(speed * DimensionDriver.MOTOR_1_MULTIPLIER)
-        if speed >= 0:
+        if left >= 0:
             self.send_command(0, left)
         else:
             self.send_command(1, -left)
 
     def send_rmotor_command(self, speed):
         right = int(speed * DimensionDriver.MOTOR_2_MULTIPLIER)
-        if speed >= 0:
+        if right >= 0:
             self.send_command(4, right)
         else:
             self.send_command(5, -right)

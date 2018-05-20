@@ -6,8 +6,10 @@ class Enum(set):
             return name
         raise AttributeError
 
-RobotState = Enum(["FORWARD", "REVERSE", "LEFT",
-    "RIGHT", "STOP"])
+RobotState = Enum(["FORWARD", "REVERSE", "STEER_LEFT", "LEFT",
+    "STEER_RIGHT", "RIGHT", "STOP"])
+RobotState.HARD_TURN_STATES = [RobotState.LEFT, RobotState.RIGHT]
+RobotState.LINEAR_STATES = [RobotState.FORWARD, RobotState.STOP, RobotState.STEER_LEFT, RobotState.STEER_RIGHT]
 
 class CommandSource:
     DISTANCE_SENSOR = 1
@@ -21,9 +23,9 @@ class RobotStateTracker:
         self.dist = 0
 
     def add(self, state):
-        if state == RobotState.STOP and len(self.states) > 0 and \
+        if len(self.states) > 0 and \
                 self.states[len(self.states)-1] == state:
-            # Dont store multiple STOP states in the list
+            # Dont store multiples of same state in the list
             return
 
         self.states.append(state)
@@ -48,3 +50,5 @@ class RobotStateTracker:
     def get_last_dist(self):
         return self.dist
 
+    def num_states(self):
+        return len(self.states)

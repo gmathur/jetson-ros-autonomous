@@ -106,6 +106,14 @@ class DiffTf:
         self.then = rospy.Time.now()
         
         # subscriptions
+        self.covariance = [
+            0.1, 0.0, 0.0, 0.0, 0.0, 0.0,
+            0.0, 0.1, 0.0, 0.0, 0.0, 0.0,
+            0.0, 0.0, 0.1, 0.0, 0.0, 0.0,
+            0.0, 0.0, 0.0, 0.1, 0.0, 0.0,
+            0.0, 0.0, 0.0, 0.0, 0.1, 0.0,
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.1
+        ]
         rospy.Subscriber("lwheel", Int16, self.lwheelCallback)
         rospy.Subscriber("rwheel", Int16, self.rwheelCallback)
         self.odomPub = rospy.Publisher("odom", Odometry, queue_size=10)
@@ -118,7 +126,7 @@ class DiffTf:
         while not rospy.is_shutdown():
             self.update()
             r.sleep()
-       
+
      
     #############################################################################
     def update(self):
@@ -179,10 +187,12 @@ class DiffTf:
             odom.pose.pose.position.y = self.y
             odom.pose.pose.position.z = 0
             odom.pose.pose.orientation = quaternion
+            odom.pose.covariance = self.covariance
             odom.child_frame_id = self.base_frame_id
             odom.twist.twist.linear.x = self.dx
             odom.twist.twist.linear.y = 0
             odom.twist.twist.angular.z = self.dr
+            odom.twist.covariance = self.covariance
             self.odomPub.publish(odom)
             
             

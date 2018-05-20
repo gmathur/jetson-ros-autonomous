@@ -127,7 +127,7 @@ class TrackImu:
 
         # Time is up
         delta = abs(math.sin(data.y)) - self.start_vertical_angle
-        num_periods_threshold = TURN_CONTIGUOUS_VERTICAL_PERIODS_THRESHOLD if self.last_robot_state in [RobotState.LEFT, RobotState.RIGHT] \
+        num_periods_threshold = TURN_CONTIGUOUS_VERTICAL_PERIODS_THRESHOLD if self.last_robot_state in RobotState.HARD_TURN_STATES \
                 else FWD_CONTIGUOUS_VERTICAL_PERIODS_THRESHOLD
 
         if abs(delta) > VERTICAL_ANGLE_THRESHOLD:

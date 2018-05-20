@@ -4,8 +4,8 @@
   <include file="$(find gbot)/launch/sensors.launch" />
 
   #### Start pilot program ###########
+  <node pkg="gbot" type="driver_node.py" name="driver_node" output="screen" required="true" />
 
-  <node pkg="gbot" type="robot_pilot.py" name="robot_pilot" output="screen" required="true">
-  </node>
+  <node pkg="gbot" type="auto_pilot.py" name="auto_pilot" output="screen" required="true" />
 
 </launch>

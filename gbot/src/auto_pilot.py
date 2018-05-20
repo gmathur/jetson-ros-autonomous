@@ -3,12 +3,13 @@ import rospy
 import random
 import threading
 import time
+from driver import Driver
 from robot_state import RobotState
 from gbot.msg import Proximity, RobotCmd
 from sensor_msgs.msg import LaserScan
 from laser_scan_processor import LaserScanProcessor
 
-DISTANCE_THRESHOLD = 0.50
+DISTANCE_THRESHOLD = 0.30
 
 class AutoPilot:
     def __init__(self, driver):
@@ -33,6 +34,10 @@ class AutoPilot:
         self.last_proximity_data = data
 
     def robot_cmds_callback(self, data):
+        # We only want to track changes
+        if self.last_robot_state and data.cmd == self.last_robot_state.cmd:
+            return
+
         self.last_robot_state = data
 
     def spin(self):
@@ -41,14 +46,20 @@ class AutoPilot:
             self.spin_drive()
             rate.sleep()
 
-    def check_proximity_data_for_obstacles(self):
+    def is_proximity_data_current(self):
         if self.last_proximity_data is None or \
-                (self.last_proximity_data_processed and self.last_proximity_data.header.stamp <= self.last_proximity_data_processed.header.stamp):
-            return None, None
+            (self.last_proximity_data_processed and self.last_proximity_data.header.stamp <= self.last_proximity_data_processed.header.stamp):
+            return False
         
         if self.last_robot_state and \
-            not (self.last_robot_state.cmd in [RobotState.FORWARD, RobotState.STOP] and \
-                self.last_proximity_data.header.stamp >= self.last_robot_state.header.stamp):
+            self.last_robot_state.cmd in RobotState.HARD_TURN_STATES and \
+            self.last_proximity_data.header.stamp < self.last_robot_state.header.stamp:
+            return False
+
+        return True
+
+    def check_proximity_data_for_obstacles(self):
+        if not self.is_proximity_data_current():
             return None, None
 
         self.last_proximity_data_processed = self.last_proximity_data
@@ -64,77 +75,67 @@ class AutoPilot:
     
         return min_dist
 
-    def check_laser_scan_for_obstacles(self):
+    def is_laser_scan_current(self):
         if self.last_laser_scan is None or \
-                (self.last_laser_scan_processed and self.last_laser_scan.header.stamp <= self.last_laser_scan_processed.header.stamp):
-            return None
-        
-        if self.last_robot_state and \
-            not (self.last_robot_state.cmd in [RobotState.FORWARD, RobotState.STOP] and \
-                self.last_laser_scan.header.stamp >= self.last_robot_state.header.stamp):
-            return None
+            (self.last_laser_scan_processed and self.last_laser_scan.header.stamp <= self.last_laser_scan_processed.header.stamp):
+            return False
 
-        res = self.laser_scan_processor.check_for_front_obstacles(self.last_laser_scan)
+        if self.last_robot_state and \
+            self.last_robot_state.cmd in RobotState.HARD_TURN_STATES and \
+            self.last_laser_scan.header.stamp < self.last_robot_state.header.stamp:
+            rospy.loginfo("last robot state %s self.last_laser_scan.header.stamp %s self.last_robot_state.header.stamp %s",
+                    self.last_robot_state.cmd, self.last_laser_scan.header.stamp, self.last_robot_state.header.stamp)
+            return False
+
+        return True
+
+    def check_laser_scan_for_obstacles(self):
+        if not self.is_laser_scan_current():
+            rospy.loginfo("Laser scan not current - returning")
+            return None, None
+        
+        res, steering_angle = self.laser_scan_processor.steer(self.last_laser_scan)
         self.last_laser_scan_processed = self.last_laser_scan
 
-        return res
-
-    def do_emergency_checks(self):
-        if (self.last_proximity_data and self.last_proximity_data.header.stamp.secs < rospy.Time.now().secs - 1) and \
-            (self.last_laser_scan and self.last_laser_scan.header.stamp.secs < rospy.Time.now().secs - 1):
-            rospy.logerr("Getting only old proximity and laser scan messages. Stopping!")
-            self.driver.do_emergency_stop()
+        return res, steering_angle
 
     def spin_drive(self):
-        self.do_emergency_checks()
-
         # If straight is ok - keep going
         proximity_check, min_dist = self.check_proximity_data_for_obstacles()
-        laser_scan_check = self.check_laser_scan_for_obstacles()
+        laser_scan_check, steering_angle = self.check_laser_scan_for_obstacles()
         if proximity_check is None and laser_scan_check is None:
-            rospy.loginfo("No data yet on new position - returning")
+            rospy.loginfo("No current data - returning")
+            if self.driver.state_tracker.num_states() == 1:
+                self.driver.forward()
             return
 
         if proximity_check or laser_scan_check:
             self.obstacle_encountered()
         else:
-            #just_started = len(self.driver.state_tracker.states) == 2 or \
-            #        self.driver.state_tracker.get_last_state() == RobotState.STOP
-            self.driver.track_imu.reset()
-            self.driver.speed_tracker.adjust_speed(min_dist, self.driver.state_tracker.get_last_dist())
-            self.driver.forward()
-            time.sleep(0.2)
+            if steering_angle and (steering_angle < 3.132 or steering_angle > 3.152):
+                self.driver.turn_angle(steering_angle)
+                self.driver.speed_tracker.adjust_speed(min_dist, self.driver.state_tracker.get_last_dist())
+            else:
+                self.driver.track_imu.reset()
+                self.driver.speed_tracker.adjust_speed(min_dist, self.driver.state_tracker.get_last_dist())
+                self.driver.forward()
 
-            #if just_started and self.driver.track_imu.should_use_imu() and \
-            #        not self.driver.track_imu.is_linear_change_significant():
-            #    rospy.loginfo("No change in IMU readings since starting movement")
-            #    self.obstacle_encountered()
+                #if just_started and self.driver.track_imu.should_use_imu() and \
+                #        not self.driver.track_imu.is_linear_change_significant():
+                #    rospy.loginfo("No change in IMU readings since starting movement")
+                #    self.obstacle_encountered()
             
         self.driver.state_tracker.set_last_dist(min_dist)
         self.last_execution = time.time()
 
     def obstacle_encountered(self):
+        rospy.loginfo("Obstacle encountered. Using laser scan to find where to go.")
         # Stop
         self.driver.stop()
         self.driver.state_tracker.set_last_dist(0)
 
-        rospy.loginfo("Using laser scan to find where to go.")
-        self.process_laser_scan()
-
-    def process_proximity(self):
-        # If last state was not turn right - turn right & scan
-        if not self.driver.state_tracker.check_state_exists(RobotState.RIGHT):
-            self.driver.turn_right()
-            return
-        elif not self.driver.state_tracker.check_state_exists(RobotState.LEFT):
-            # Else if last state was not turn left - turn left + left & scan
-            self.driver.turn_angle(3.14)
-            return
-        elif not self.driver.state_tracker.check_state_exists(RobotState.REVERSE):
-            # Tried turning right and left. So we are wedged - back out
-            self.driver.reverse()
-        
-        self.random_turn()
+        if self.last_laser_scan:
+            self.pick_heading_from_scan()
 
     def random_turn(self):
         rand = random.random()
@@ -143,15 +144,15 @@ class AutoPilot:
         else:
             self.driver.turn_right()
 
-    def process_laser_scan(self):
-        angle, left_obstacle, right_obstacle = self.laser_scan_processor.process_laser_scan(self.last_laser_scan)
+    def pick_heading_from_scan(self):
+        angle, left_obstacle, right_obstacle = self.laser_scan_processor.pick_heading(self.last_laser_scan)
 
         # Turn towards angle or if none is found, reverse out
         if angle is None:
             rospy.loginfo("Laser scan already being processed - dont do anything")
-        elif angle == -1 or (left_obstacle and right_obstacle):
-            rospy.loginfo("Based on laser scans, no angle found - reversing left_obstacle %s right_obstacle %s",
-                    left_obstacle, right_obstacle)
+        elif angle == -1 or (left_obstacle == True and right_obstacle == True):
+            rospy.loginfo("Based on laser scans, no angle found - angle %f reversing left_obstacle %s right_obstacle %s",
+                    angle, left_obstacle, right_obstacle)
             
             self.driver.reverse()
             self.random_turn()
@@ -161,4 +162,15 @@ class AutoPilot:
 
             # Turn in that direction
             self.driver.turn_angle(angle, left_obstacle, right_obstacle)
+
+if __name__ == '__main__':
+    rospy.init_node('robot_pilot')
+
+    driver = Driver()
+    auto_pilot = AutoPilot(driver)
+    try:
+        driver.open()
+        auto_pilot.spin()
+    finally:
+        driver.stop()
 

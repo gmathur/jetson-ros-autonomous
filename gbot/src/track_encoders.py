@@ -33,9 +33,12 @@ class TrackEncoders:
             return
 
         if self.last_state == RobotState.FORWARD:
-            if data.data == self.lmotor_reading:
+            if data.data == self.lmotor_reading and self.lmotor_reading > 0:
                 rospy.logerr("Robot stuck - lmotor not moving")
                 self.driver.do_emergency_stop()
+
+        self.lmotor_reading = data.data
+        self.last_time = time.time()
 
     def rwheel_callback(self, data):
         if self.last_state is None:
@@ -45,7 +48,9 @@ class TrackEncoders:
             return
 
         if self.last_state == RobotState.FORWARD:
-            if data.data == self.rmotor_reading:
+            if data.data == self.rmotor_reading and self.rmotor_reading > 0:
                 rospy.logerr("Robot stuck - rmotor not moving")
                 self.driver.do_emergency_stop()
 
+        self.rmotor_reading = data.data
+        self.last_time = time.time()
