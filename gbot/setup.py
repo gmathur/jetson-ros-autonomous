@@ -5,7 +5,7 @@ from catkin_pkg.python_setup import generate_distutils_setup
 
 d = generate_distutils_setup(
     packages=['gbot'],
-    scripts=['src/robot_pilot.py', 'src/distance_scanner.py'],
+    scripts=['src/auto_pilot.py', 'src/distance_scanner.py'],
     package_dir={'': 'src'},
     install_requires=['rospkg'],
     )
