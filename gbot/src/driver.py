@@ -2,6 +2,7 @@
 import rospy
 import time
 from track_imu import TrackImu
+from track_vertical_pose import TrackVerticalPose
 from track_encoders import TrackEncoders
 from robot_state import RobotState, CommandSource, RobotStateTracker
 from speed_tracker import SpeedTracker
@@ -15,8 +16,9 @@ class Driver:
     def __init__(self):
         self.speed_tracker = SpeedTracker()
         self.state_tracker = RobotStateTracker()
-        self.track_imu = TrackImu(self)
         self.track_encoders = TrackEncoders(self)
+        self.vertical_pose_tracker = TrackVerticalPose(self)
+        self.track_imu = TrackImu()
         self.emergency_stop = False
 
         self.pub = rospy.Publisher("robot_commands", RobotCmd, queue_size=1)
@@ -144,11 +146,11 @@ class Driver:
         self.rmotor_pub.publish(rmotor_msg)
 
     def track_angular_change(self, state, turn_angle):
-#        if self.track_imu.should_use_imu():
-#            rospy.loginfo("Tracking IMU change for turns")
-#            self.track_imu_for_angular_change(turn_angle)
-#        else:
-#            rospy.logwarn("IMU data not available - falling back to time based turns")
+        if self.track_imu.should_use_imu():
+            rospy.loginfo("Tracking IMU change for turns")
+            self.track_imu_for_angular_change(turn_angle)
+        else:
+            rospy.logwarn("IMU data not available - falling back to time based turns")
             self.track_time_for_angular_change(state, turn_angle)
 
     def track_time_for_angular_change(self, state, turn_angle):
@@ -163,18 +165,20 @@ class Driver:
     def track_imu_for_angular_change(self, turn_angle):
         start_time = time.time()
 
-        self.track_imu.reset()
+        self.track_imu.start_tracking()
         #for i in range(0, int(turn_time / 0.1)):
         while(True):
-            time.sleep(0.001)
-            angular_change = abs(self.track_imu.get_angular_change())
+            time.sleep(0.1)
+            angular_change = abs(self.track_imu.get_current_angle())
             rospy.logdebug("Angular change %f (want %f)", angular_change, turn_angle)
             
             if angular_change >= turn_angle:
                 rospy.loginfo("Turn complete. Wanted %f angular change %f", turn_angle, angular_change)
+                self.track_imu.stop_tracking()
                 return False
 
             if (time.time() - start_time) > 2:
+                self.track_imu.stop_tracking()
                 return True
 
 if __name__== "__main__":
@@ -207,3 +211,4 @@ if __name__== "__main__":
         driver.stop()
     finally:
         motor_driver.close()
+        pass
