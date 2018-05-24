@@ -21,6 +21,7 @@ class TrackVerticalPose:
         self.start_vertical_angle = None
         self.last_robot_state = RobotState.STOP
         self.analyzing_vertical_start = self.get_current_time()
+        self.tracked_imu_period_index = 0
         
         rospy.Subscriber("robot_commands", RobotCmd, self.robot_cmd_callback, queue_size=1)
         rospy.Subscriber("imu/euler", Vector3, self.euler_callback, queue_size=1)

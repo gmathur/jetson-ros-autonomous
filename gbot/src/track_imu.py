@@ -12,6 +12,7 @@ from geometry_msgs.msg import Vector3
 from std_msgs.msg import String
 from robot_state import RobotState
 from gbot.msg import RobotCmd
+from tf.transformations import euler_from_quaternion
 
 def unit_vector(vector):
     """ Returns the unit vector of the vector.  """
@@ -74,3 +75,8 @@ class TrackImu:
     def should_use_imu(self):
         return True
 
+if __name__== "__main__":
+    rospy.init_node("imu_node")
+
+    track_imu = TrackImu()
+    rospy.spin()

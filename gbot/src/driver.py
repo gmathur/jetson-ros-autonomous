@@ -8,6 +8,7 @@ from robot_state import RobotState, CommandSource, RobotStateTracker
 from speed_tracker import SpeedTracker
 from std_msgs.msg import String, Int16
 from gbot.msg import RobotCmd
+from track_pose import TrackPose
 
 class Driver:
     LEFT_TURN_TIME_PER_RADIAN = 0.26
@@ -18,6 +19,7 @@ class Driver:
         self.state_tracker = RobotStateTracker()
         self.track_encoders = TrackEncoders(self)
         self.vertical_pose_tracker = TrackVerticalPose(self)
+        self.track_pose = TrackPose()
         self.track_imu = TrackImu()
         self.emergency_stop = False
 
@@ -126,11 +128,11 @@ class Driver:
             lmotor_msg.data = -self.speed_tracker.reverse_speed
             rmotor_msg.data = -self.speed_tracker.reverse_speed
         elif cmd == RobotState.LEFT:
-            lmotor_msg.data = -self.speed_tracker.forward_speed
-            rmotor_msg.data = self.speed_tracker.forward_speed
+            lmotor_msg.data = -self.speed_tracker.forward_speed * 0.8
+            rmotor_msg.data = self.speed_tracker.forward_speed * 0.8
         elif cmd == RobotState.RIGHT:
-            lmotor_msg.data = self.speed_tracker.forward_speed
-            rmotor_msg.data = -self.speed_tracker.forward_speed
+            lmotor_msg.data = self.speed_tracker.forward_speed * 0.8
+            rmotor_msg.data = -self.speed_tracker.forward_speed * 0.8
         elif cmd == RobotState.STEER_LEFT:
             lmotor_msg.data = int(self.speed_tracker.forward_speed * steering_ratio)
             rmotor_msg.data = self.speed_tracker.forward_speed
@@ -146,12 +148,15 @@ class Driver:
         self.rmotor_pub.publish(rmotor_msg)
 
     def track_angular_change(self, state, turn_angle):
-        if self.track_imu.should_use_imu():
-            rospy.loginfo("Tracking IMU change for turns")
-            self.track_imu_for_angular_change(turn_angle)
-        else:
-            rospy.logwarn("IMU data not available - falling back to time based turns")
-            self.track_time_for_angular_change(state, turn_angle)
+#        if self.track_imu.should_use_imu():
+#            rospy.loginfo("Tracking IMU change for turns")
+#            self.track_imu_for_angular_change(turn_angle)
+            rospy.loginfo("Tracking pose change for turns")
+            self.track_for_angular_change(state, turn_angle, self.track_pose)
+#
+#        else:
+#            rospy.logwarn("IMU data not available - falling back to time based turns")
+#            self.track_time_for_angular_change(state, turn_angle)
 
     def track_time_for_angular_change(self, state, turn_angle):
         sleep_time = 0.0
@@ -162,23 +167,26 @@ class Driver:
         sleep_time = 0.1 if sleep_time < 0.1 else sleep_time
         time.sleep(sleep_time)
 
-    def track_imu_for_angular_change(self, turn_angle):
+    def track_for_angular_change(self, state, turn_angle, tracker):
         start_time = time.time()
 
-        self.track_imu.start_tracking()
+        tracker.start_tracking()
         #for i in range(0, int(turn_time / 0.1)):
         while(True):
+            self.execute_cmd(state)
             time.sleep(0.1)
-            angular_change = abs(self.track_imu.get_current_angle())
-            rospy.logdebug("Angular change %f (want %f)", angular_change, turn_angle)
+            self.stop()
+            time.sleep(0.2)
+            angular_change = abs(tracker.get_current_angle())
+            rospy.loginfo("Angular change %f (want %f)", angular_change, turn_angle)
             
             if angular_change >= turn_angle:
                 rospy.loginfo("Turn complete. Wanted %f angular change %f", turn_angle, angular_change)
-                self.track_imu.stop_tracking()
+                tracker.stop_tracking()
                 return False
 
             if (time.time() - start_time) > 2:
-                self.track_imu.stop_tracking()
+                tracker.stop_tracking()
                 return True
 
 if __name__== "__main__":

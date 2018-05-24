@@ -116,15 +116,9 @@ class AutoPilot:
                 self.driver.turn_angle(steering_angle)
                 self.driver.speed_tracker.adjust_speed(min_dist, self.driver.state_tracker.get_last_dist())
             else:
-                self.driver.track_imu.reset()
                 self.driver.speed_tracker.adjust_speed(min_dist, self.driver.state_tracker.get_last_dist())
                 self.driver.forward()
 
-                #if just_started and self.driver.track_imu.should_use_imu() and \
-                #        not self.driver.track_imu.is_linear_change_significant():
-                #    rospy.loginfo("No change in IMU readings since starting movement")
-                #    self.obstacle_encountered()
-            
         self.driver.state_tracker.set_last_dist(min_dist)
         self.last_execution = time.time()
 
