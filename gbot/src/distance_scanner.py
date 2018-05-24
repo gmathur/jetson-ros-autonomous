@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 import rospy
+import time
 from ultrasonic_scanner import UltrasonicScanner
 from gbot.msg import Proximity
-#from sharp_scanner import SharpScanner
 
 class DistanceScanner:
     def __init__(self):
@@ -28,6 +28,7 @@ class DistanceScanner:
             msg.straight = distances[0]
             
             self.pub.publish(msg)
+            time.sleep(0.05)
 
 if __name__ == "__main__":
     rospy.init_node('proximity_node')

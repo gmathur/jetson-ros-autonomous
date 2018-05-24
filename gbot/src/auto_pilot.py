@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import rospy
-import random
 import threading
 import time
 from driver import Driver
@@ -8,6 +7,7 @@ from robot_state import RobotState
 from gbot.msg import Proximity, RobotCmd
 from sensor_msgs.msg import LaserScan
 from laser_scan_processor import LaserScanProcessor
+from std_msgs.msg import Int16
 
 DISTANCE_THRESHOLD = 0.30
 
@@ -20,12 +20,18 @@ class AutoPilot:
         rospy.Subscriber("proximity", Proximity, self.proximity_callback, queue_size=1)
         rospy.Subscriber("scan", LaserScan, self.laser_scan_callback, queue_size=1)
         rospy.Subscriber("robot_commands", RobotCmd, self.robot_cmds_callback, queue_size=1)
+        rospy.Subscriber("manual_override", Int16, self.manual_mode_callback, queue_size=5)
 
         self.last_robot_state = None
         self.last_laser_scan = None
         self.last_proximity_data = None
         self.last_laser_scan_processed = None
         self.last_proximity_data_processed = None
+        self.manual_override = False
+
+    def manual_mode_callback(self, data):
+        self.manual_override = (data.data == 1)
+        rospy.logwarn("Manual override %s", self.manual_override)
 
     def laser_scan_callback(self, data):
         self.last_laser_scan = data
@@ -43,7 +49,8 @@ class AutoPilot:
     def spin(self):
         rate = rospy.Rate(5)
         while not rospy.is_shutdown():
-            self.spin_drive()
+            if not self.manual_override:
+                self.spin_drive()
             rate.sleep()
 
     def is_proximity_data_current(self):
@@ -131,13 +138,6 @@ class AutoPilot:
         if self.last_laser_scan:
             self.pick_heading_from_scan()
 
-    def random_turn(self):
-        rand = random.random()
-        if rand <= 0.5:
-            self.driver.turn_left()
-        else:
-            self.driver.turn_right()
-
     def pick_heading_from_scan(self):
         angle, left_obstacle, right_obstacle = self.laser_scan_processor.pick_heading(self.last_laser_scan)
 
@@ -149,7 +149,7 @@ class AutoPilot:
                     angle, left_obstacle, right_obstacle)
             
             self.driver.reverse()
-            self.random_turn()
+            self.driver.random_turn()
         else:
             rospy.loginfo("Based on laser scans, turning towards %f left_obstacle %s, right_obstacle %s", 
                     angle, left_obstacle, right_obstacle)

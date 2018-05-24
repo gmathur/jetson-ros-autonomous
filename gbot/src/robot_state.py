@@ -9,7 +9,10 @@ class Enum(set):
 RobotState = Enum(["FORWARD", "REVERSE", "STEER_LEFT", "LEFT",
     "STEER_RIGHT", "RIGHT", "STOP"])
 RobotState.HARD_TURN_STATES = [RobotState.LEFT, RobotState.RIGHT]
-RobotState.LINEAR_STATES = [RobotState.FORWARD, RobotState.STOP, RobotState.STEER_LEFT, RobotState.STEER_RIGHT]
+RobotState.LINEAR_STATES = [RobotState.FORWARD, RobotState.STOP,
+        RobotState.STEER_LEFT, RobotState.STEER_RIGHT]
+RobotState.MOTION_STATES = [RobotState.FORWARD, RobotState.STEER_LEFT,
+        RobotState.STEER_RIGHT, RobotState.LEFT, RobotState.RIGHT]
 
 class CommandSource:
     DISTANCE_SENSOR = 1

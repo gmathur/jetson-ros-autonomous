@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import random
 import rospy
 import time
 from track_imu import TrackImu
@@ -19,8 +20,8 @@ class Driver:
         self.state_tracker = RobotStateTracker()
         self.track_encoders = TrackEncoders(self)
         self.vertical_pose_tracker = TrackVerticalPose(self)
-        self.track_pose = TrackPose()
-        self.track_imu = TrackImu()
+        self.track_pose = TrackPose(self)
+        #self.track_imu = TrackImu()
         self.emergency_stop = False
 
         self.pub = rospy.Publisher("robot_commands", RobotCmd, queue_size=1)
@@ -41,6 +42,13 @@ class Driver:
 
     def turn_right(self):
         self.turn_angle(1.57)
+
+    def random_turn(self):
+        rand = random.random()
+        if rand <= 0.5:
+            self.turn_left()
+        else:
+            self.turn_right()
 
     def stop_and_turn_robot(self, angle, left_obstacle, right_obstacle):
         ## Straight ahead is 0 radians, increasing clockwise to 2 pi
@@ -93,9 +101,9 @@ class Driver:
                     angle, left_obstacle, right_obstacle)
             self.steer_robot(angle)
 
-    def reverse(self):
+    def reverse(self, delay=1.0):
         self.execute_cmd(RobotState.REVERSE)
-        time.sleep(1)
+        time.sleep(delay)
         self.execute_cmd(RobotState.STOP)
 
     def stop(self):
@@ -105,15 +113,19 @@ class Driver:
         self.stop()
         self.emergency_stop = True
 
-    def execute_cmd(self, cmd, steering_ratio=1.0):
-        rospy.loginfo("Executing %s fwd speed: %d steering ratio: %f", cmd, self.speed_tracker.forward_speed,
-                steering_ratio)
+    def track_state(self, cmd):
         self.state_tracker.add(cmd)
         
         data = RobotCmd()
         data.header.stamp = rospy.Time.now()
         data.cmd = cmd
         self.pub.publish(data)
+
+    def execute_cmd(self, cmd, steering_ratio=1.0, track_state=True):
+        rospy.loginfo("Executing %s fwd speed: %d steering ratio: %f", cmd, self.speed_tracker.forward_speed,
+                steering_ratio)
+        if track_state:
+            self.track_state(cmd)
 
         if self.emergency_stop and cmd != RobotState.STOP:
              rospy.logerr("Emergency stop. Ignoring %s command", cmd)
@@ -182,12 +194,12 @@ class Driver:
             
             if angular_change >= turn_angle:
                 rospy.loginfo("Turn complete. Wanted %f angular change %f", turn_angle, angular_change)
-                tracker.stop_tracking()
-                return False
+                break
 
-            if (time.time() - start_time) > 2:
-                tracker.stop_tracking()
-                return True
+            if (time.time() - start_time) > 4:
+                break
+
+        tracker.stop_tracking()
 
 if __name__== "__main__":
     from dimension_driver import DimensionDriver
