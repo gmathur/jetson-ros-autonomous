@@ -140,11 +140,11 @@ class Driver:
             lmotor_msg.data = -self.speed_tracker.reverse_speed
             rmotor_msg.data = -self.speed_tracker.reverse_speed
         elif cmd == RobotState.LEFT:
-            lmotor_msg.data = -self.speed_tracker.forward_speed * 0.8
-            rmotor_msg.data = self.speed_tracker.forward_speed * 0.8
+            lmotor_msg.data = -self.speed_tracker.forward_speed * 0.9
+            rmotor_msg.data = self.speed_tracker.forward_speed * 0.9
         elif cmd == RobotState.RIGHT:
-            lmotor_msg.data = self.speed_tracker.forward_speed * 0.8
-            rmotor_msg.data = -self.speed_tracker.forward_speed * 0.8
+            lmotor_msg.data = self.speed_tracker.forward_speed * 0.9
+            rmotor_msg.data = -self.speed_tracker.forward_speed * 0.9
         elif cmd == RobotState.STEER_LEFT:
             lmotor_msg.data = int(self.speed_tracker.forward_speed * steering_ratio)
             rmotor_msg.data = self.speed_tracker.forward_speed
@@ -171,13 +171,19 @@ class Driver:
 #            self.track_time_for_angular_change(state, turn_angle)
 
     def track_time_for_angular_change(self, state, turn_angle):
+        sleep_time = self.get_turn_time_for_angle(state, turn_angle)
+        time.sleep(sleep_time)
+
+    def get_turn_time_for_angle(self, state, turn_angle):
         sleep_time = 0.0
         if state == RobotState.LEFT:
             sleep_time = Driver.LEFT_TURN_TIME_PER_RADIAN * turn_angle
         else:
             sleep_time = Driver.RIGHT_TURN_TIME_PER_RADIAN * turn_angle
-        sleep_time = 0.1 if sleep_time < 0.1 else sleep_time
-        time.sleep(sleep_time)
+        sleep_time = 0.04 if sleep_time < 0.04 else sleep_time
+        sleep_time = 0.1 if sleep_time > 0.1 else sleep_time
+
+        return sleep_time
 
     def track_for_angular_change(self, state, turn_angle, tracker):
         start_time = time.time()
@@ -185,16 +191,22 @@ class Driver:
         tracker.start_tracking()
         #for i in range(0, int(turn_time / 0.1)):
         while(True):
+            sleep_time = self.get_turn_time_for_angle(state, abs(turn_angle - tracker.get_current_angle()))
             self.execute_cmd(state)
-            time.sleep(0.1)
+            time.sleep(sleep_time)
             self.stop()
             time.sleep(0.2)
             angular_change = abs(tracker.get_current_angle())
             rospy.loginfo("Angular change %f (want %f)", angular_change, turn_angle)
             
             if angular_change >= turn_angle:
-                rospy.loginfo("Turn complete. Wanted %f angular change %f", turn_angle, angular_change)
-                break
+                if angular_change <= (turn_angle + 0.05):
+                    rospy.loginfo("Turn complete. Wanted %f angular change %f", turn_angle, angular_change)
+                    break
+                else:
+                    # Ugh over turned - correct yourself
+                    state = RobotState.LEFT if state == RobotState.RIGHT else RobotState.RIGHT
+                    rospy.loginfo("Turned too much")
 
             if (time.time() - start_time) > 4:
                 break

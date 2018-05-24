@@ -33,7 +33,9 @@ class TrackPose:
     def get_current_angle(self):
         if self.last_pose is None or self.start_pose is None:
             return 0.0
-        return abs(self.last_pose.theta - self.start_pose.theta)
+
+        diff = abs(self.last_pose.theta - self.start_pose.theta) % (2 * 3.142)
+        return min(diff, (2 * 3.142 - diff))
 
     def pose_callback(self, data):
         self.do_stuck_checks(data)
