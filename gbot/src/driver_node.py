@@ -3,6 +3,8 @@ import rospy
 from std_msgs.msg import Int16
 from dimension_driver import DimensionDriver
 
+dimension_driver = DimensionDriver(128, '/dev/ttyUSB0')
+
 class DriverNode:
     def __init__(self, driver):
         self.driver = driver
@@ -22,15 +24,19 @@ class DriverNode:
         else:
             self.driver.send_rmotor_command(data.data)
 
+def shutdown():
+    print "shutting down"
+    if dimension_driver:
+        dimension_driver.stop()
+        dimension_driver.close()
+
 if __name__ == '__main__':
     rospy.init_node('driver_node')
 
     dimension_driver = DimensionDriver(128, '/dev/ttyUSB0')
 
-    try:
-        dimension_driver.open()
-        driver_node = DriverNode(dimension_driver)
-
-        rospy.spin()
-    finally:
-        dimension_driver.close()
+    dimension_driver.open()
+    driver_node = DriverNode(dimension_driver)
+        
+    rospy.on_shutdown(shutdown)
+    rospy.spin()
