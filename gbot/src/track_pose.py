@@ -18,9 +18,11 @@ class TrackPose:
         self.last_robot_cmd = None
         self.robot_cmd_start_pose = None
         self.stop_tracking()
+        self.manual_override = False
 
         rospy.Subscriber("pose2D", Pose2D, self.pose_callback, queue_size=1)
         rospy.Subscriber("robot_commands", RobotCmd, self.robot_cmd_callback, queue_size=1)
+        rospy.Subscriber("manual_override", Int16, self.manual_override_callback, queue_size=5)
         self.manual_mode_pub = rospy.Publisher("manual_override", Int16, queue_size=1)
 
     def clear(self):
@@ -36,6 +38,9 @@ class TrackPose:
 
         diff = abs(self.last_pose.theta - self.start_pose.theta) % (2 * 3.142)
         return min(diff, (2 * 3.142 - diff))
+
+    def manual_override_callback(self, data):
+        self.manual_override = data.data == 1
 
     def pose_callback(self, data):
         self.do_stuck_checks(data)
@@ -54,6 +59,9 @@ class TrackPose:
         self.clear()
 
     def do_stuck_checks(self, data):
+        if self.manual_override:
+            return
+
         if self.last_robot_cmd and self.last_robot_cmd.header.stamp.secs > (time.time() - 2.0) or \
                 self.robot_cmd_start_pose is None or \
                 self.last_pose is None:

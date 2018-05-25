@@ -10,6 +10,7 @@ from threading import Thread
 from robot_state import RobotState
 from gbot.msg import RobotCmd
 from geometry_msgs.msg import Vector3
+from std_msgs.msg import Int16
 
 VERTICAL_ANGLE_THRESHOLD = 0.04
 FWD_CONTIGUOUS_VERTICAL_PERIODS_THRESHOLD = 5
@@ -22,9 +23,14 @@ class TrackVerticalPose:
         self.last_robot_state = RobotState.STOP
         self.analyzing_vertical_start = self.get_current_time()
         self.tracked_imu_period_index = 0
-        
+        self.manual_override = False
+
         rospy.Subscriber("robot_commands", RobotCmd, self.robot_cmd_callback, queue_size=1)
         rospy.Subscriber("imu/euler", Vector3, self.euler_callback, queue_size=1)
+        rospy.Subscriber("manual_override", Int16, self.manual_override_callback, queue_size=5)
+
+    def manual_override_callback(self, data):
+        self.manual_override = data.data == 1
 
     def euler_callback(self, data):
         # Do emergency checks
@@ -42,6 +48,9 @@ class TrackVerticalPose:
         return int(round(time.time() * 1000))
 
     def do_emergency_checks(self, data):
+        if self.manual_override:
+            return
+
         if self.start_vertical_angle is None or \
             self.last_robot_state == RobotState.STOP:
             self.start_vertical_tracking(data)

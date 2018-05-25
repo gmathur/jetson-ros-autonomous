@@ -16,6 +16,8 @@ HEIGHT = 128
 SPEED_HZ = 4000000
 FPS = 24
 
+display = None
+
 class Display:
     def __init__(self, font, assets_dir):
         rospy.loginfo("Loading font %s assets dir %s", font, assets_dir)
@@ -67,16 +69,21 @@ class Display:
         pass
         #self.disp.fill((0,0,0))
 
+
+def shutdown():
+    if display:
+        display.quit()
+
 if __name__ == "__main__":
     rospy.init_node('display')
     font = rospy.get_param("font")
     assets_dir = rospy.get_param("assets")
-    display = Display(font, assets_dir)
     
-    try:
-        display.play_movie("rising_sun.mpg")
-        time.sleep(7)
-        display.clear()
-        rospy.spin()
-    finally:
-        display.quit()
+    global display
+    display = Display(font, assets_dir)
+
+    rospy.on_shutdown(shutdown)
+    display.play_movie("rising_sun.mpg")
+    time.sleep(7)
+    display.clear()
+    rospy.spin()
