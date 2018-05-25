@@ -28,6 +28,7 @@ class AutoPilot:
         self.last_laser_scan_processed = None
         self.last_proximity_data_processed = None
         self.manual_override = False
+        self.processing = False
 
     def manual_mode_callback(self, data):
         self.manual_override = (data.data == 1)
@@ -50,7 +51,8 @@ class AutoPilot:
         rate = rospy.Rate(5)
         while not rospy.is_shutdown():
             if not self.manual_override:
-                self.spin_drive()
+                if not self.processing:
+                    self.spin_drive()
             rate.sleep()
 
     def is_proximity_data_current(self):
@@ -107,27 +109,32 @@ class AutoPilot:
         return res, steering_angle
 
     def spin_drive(self):
-        # If straight is ok - keep going
-        proximity_check, min_dist = self.check_proximity_data_for_obstacles()
-        laser_scan_check, steering_angle = self.check_laser_scan_for_obstacles()
-        if proximity_check is None and laser_scan_check is None:
-            rospy.loginfo("No current data - returning")
-            if self.driver.state_tracker.num_states() == 1:
-                self.driver.forward()
-            return
+        try:
+            self.processing = True
 
-        if proximity_check or laser_scan_check:
-            self.obstacle_encountered()
-        else:
-            if steering_angle and (steering_angle < 3.132 or steering_angle > 3.152):
-                self.driver.turn_angle(steering_angle)
-                self.driver.speed_tracker.adjust_speed(min_dist, self.driver.state_tracker.get_last_dist())
+            # If straight is ok - keep going
+            proximity_check, min_dist = self.check_proximity_data_for_obstacles()
+            laser_scan_check, steering_angle = self.check_laser_scan_for_obstacles()
+            if proximity_check is None and laser_scan_check is None:
+                rospy.loginfo("No current data - returning")
+                if self.driver.state_tracker.num_states() == 1:
+                    self.driver.forward()
+                return
+
+            if proximity_check or laser_scan_check:
+                self.obstacle_encountered()
             else:
-                self.driver.speed_tracker.adjust_speed(min_dist, self.driver.state_tracker.get_last_dist())
-                self.driver.forward()
+                if steering_angle and (steering_angle < 3.132 or steering_angle > 3.152):
+                    self.driver.turn_angle(steering_angle)
+                    self.driver.speed_tracker.adjust_speed(min_dist, self.driver.state_tracker.get_last_dist())
+                else:
+                    self.driver.speed_tracker.adjust_speed(min_dist, self.driver.state_tracker.get_last_dist())
+                    self.driver.forward()
 
-        self.driver.state_tracker.set_last_dist(min_dist)
-        self.last_execution = time.time()
+            self.driver.state_tracker.set_last_dist(min_dist)
+            self.last_execution = time.time()
+        finally:
+            self.processing = False
 
     def obstacle_encountered(self):
         rospy.loginfo("Obstacle encountered. Using laser scan to find where to go.")

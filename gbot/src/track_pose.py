@@ -62,10 +62,13 @@ class TrackPose:
         delta_x = abs(self.last_pose.x - self.robot_cmd_start_pose.x)
         delta_y = abs(self.last_pose.y - self.robot_cmd_start_pose.y)
         if self.last_robot_cmd.cmd in RobotState.MOTION_STATES and \
-            delta_x < 0.1 and delta_y < 0.1:
-            rospy.logwarn("Think we are stuck. state %s delta x %f delta y %f", self.last_robot_cmd.cmd,
+            delta_x < 0.2 and delta_y < 0.2:
+            rospy.logwarn("Robot is stuck - extricating. state %s delta x %f delta y %f", self.last_robot_cmd.cmd,
                 delta_x, delta_y)
             self.unstuck()
+        else:
+            rospy.loginfo("Not stuck. state %s delta x %f delta y %f", self.last_robot_cmd.cmd,
+                delta_x, delta_y)
 
     def unstuck(self):
         data = Int16()
@@ -80,9 +83,10 @@ class TrackPose:
 
     def robot_cmd_callback(self, data):
         if self.last_robot_cmd and self.robot_cmd_start_pose and \
-                self.last_robot_cmd.cmd == data.cmd:
+                self.last_robot_cmd.cmd == data.cmd and \
+                self.last_robot_cmd.header.stamp.secs > (time.time() - 2.0):
             # Only interested in change of commands - remember each command
-            # is issued periodically
+            # is issued periodically. Track over 2 sec interval
             return
             
         self.last_robot_cmd = data

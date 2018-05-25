@@ -77,7 +77,7 @@ class Driver:
                 self.execute_cmd(RobotState.STOP)
 
     def compute_steering_ratio(self, angle):
-        ratio = angle / 2.0
+        ratio = angle / 1.85
         return 1 - ratio
 
     def steer_robot(self, angle):
@@ -106,8 +106,8 @@ class Driver:
         time.sleep(delay)
         self.execute_cmd(RobotState.STOP)
 
-    def stop(self):
-        self.execute_cmd(RobotState.STOP)
+    def stop(self, track_state=True):
+        self.execute_cmd(RobotState.STOP, track_state)
 
     def do_emergency_stop(self):
         self.stop()
@@ -190,6 +190,7 @@ class Driver:
 
         tracker.start_tracking()
         #for i in range(0, int(turn_time / 0.1)):
+        corrections = 0
         while(True):
             sleep_time = self.get_turn_time_for_angle(state, abs(turn_angle - tracker.get_current_angle()))
             self.execute_cmd(state)
@@ -207,8 +208,9 @@ class Driver:
                     # Ugh over turned - correct yourself
                     state = RobotState.LEFT if state == RobotState.RIGHT else RobotState.RIGHT
                     rospy.loginfo("Turned too much")
+                    corrections += 1
 
-            if (time.time() - start_time) > 4:
+            if corrections > 3 or (time.time() - start_time) > 4:
                 break
 
         tracker.stop_tracking()

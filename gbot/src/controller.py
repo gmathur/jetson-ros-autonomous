@@ -12,6 +12,7 @@ def main(win):
     camera_pub = rospy.Publisher("camera_commands", String, queue_size=1)
     lmotor_pub = rospy.Publisher("lmotor", Int16, queue_size=1)
     rmotor_pub = rospy.Publisher("rmotor", Int16, queue_size=1)
+    manual_mode_pub = rospy.Publisher("manual_override", Int16, queue_size=1)
 
     camera_cmds = {
         "W": "U",
@@ -42,6 +43,10 @@ def main(win):
                     camera_pub.publish(msg)
 
                 if key in ['KEY_UP', 'KEY_DOWN', 'KEY_LEFT', 'KEY_RIGHT']:
+                    manual_mode = Int16()
+                    manual_mode.data = 1
+                    manual_mode_pub.publish(manual_mode)
+
                     if key == "KEY_UP":
                         msg = Int16()
                         msg.data = 127
