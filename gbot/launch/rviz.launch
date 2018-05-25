@@ -1,0 +1,6 @@
+<launch>
+  <node pkg="rviz" type="rviz" name="rviz"
+          args="-d $(find gbot)/rviz/live-mapping.rviz">
+    <remap from="/raspicam_node/image" to="/dnn_images" />
+  </node>
+</launch>

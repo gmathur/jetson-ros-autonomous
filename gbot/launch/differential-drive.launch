@@ -5,6 +5,7 @@
   <rosparam param="base_width">0.193</rosparam>
 
   <node pkg="differential_drive" type="diff_tf.py" name="diff_tf" output="screen">
+    <!-- <remap from="tf" to="differential_drive_tf" /> -->
   </node>
 
   <node pkg="differential_drive" type="pid_velocity.py" name="lpid_velocity">

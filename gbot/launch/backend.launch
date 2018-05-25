@@ -1,8 +1,7 @@
 <launch>
-  <node pkg="rviz" type="rviz" name="rviz"
-          args="-d $(find gbot)/rviz/live-mapping.rviz">
-    <remap from="/raspicam_node/image" to="/dnn_images" />
-  </node>
+  <param name ="/use_sim_time" value="true"/>
+
+  <include file="$(find gbot)/launch/rviz.launch" />
 
   #### Start object detection ###########
   <include file="$(find gbot)/launch/dnn_detect.launch" />
