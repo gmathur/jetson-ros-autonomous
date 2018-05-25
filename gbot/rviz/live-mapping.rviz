@@ -9,6 +9,7 @@ Panels:
         - /Grid1
         - /Grid1/Offset1
         - /LaserScan1
+        - /LaserScan1/Status1
         - /Map1
         - /Imu1
         - /TF1
@@ -22,7 +23,6 @@ Panels:
         - /LaserScan5
         - /PoseWithCovariance1
         - /Pose1
-        - /Pose1/Status1
       Splitter Ratio: 0.5
     Tree Height: 489
   - Class: rviz/Selection
@@ -139,14 +139,18 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
+        base_link:
+          camera:
+            {}
+          imu_link:
+            {}
+          laser:
+            {}
         odom:
-          base_link:
-            camera:
-              {}
-            imu_link:
-              {}
-            laser:
-              {}
+          {}
+        world:
+          map:
+            {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -284,12 +288,12 @@ Visualization Manager:
       Unreliable: false
       Value: false
       Visibility:
-        "": true
         Grid: true
         Imu: true
         LaserScan: true
         Map: true
         Odometry: true
+        Pose: true
         PoseWithCovariance: true
         TF: true
         Value: true
@@ -373,7 +377,7 @@ Visualization Manager:
   Global Options:
     Background Color: 48; 48; 48
     Default Light: true
-    Fixed Frame: laser
+    Fixed Frame: world
     Frame Rate: 30
   Name: root
   Tools:
@@ -409,10 +413,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 1.25479662
+      Pitch: 1.24479663
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.33038759
+      Yaw: 1.20538425
     Saved: ~
 Window Geometry:
   Camera:

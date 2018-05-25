@@ -34,6 +34,4 @@
     <param name="lasamplestep" value="0.05"/>
   </node>
 
-  <!--- Run AMCL -->
-  <include file="$(find gbot)/launch/amcl_diff.launch" />:
 </launch>
