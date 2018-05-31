@@ -129,6 +129,8 @@ class PidVelocity():
     #####################################################
         self.dt_duration = rospy.Time.now() - self.then
         self.dt = self.dt_duration.to_sec()
+        if self.dt == 0:
+            return
         rospy.logdebug("-D- %s caclVelocity dt=%0.3f wheel_latest=%0.3f wheel_prev=%0.3f" % (self.nodename, self.dt, self.wheel_latest, self.wheel_prev))
         
         if (self.wheel_latest == self.wheel_prev):
@@ -175,6 +177,8 @@ class PidVelocity():
     #####################################################
         pid_dt_duration = rospy.Time.now() - self.prev_pid_time
         pid_dt = pid_dt_duration.to_sec()
+        if pid_dt == 0:
+            return
         self.prev_pid_time = rospy.Time.now()
         
         if self.manual_drive:
