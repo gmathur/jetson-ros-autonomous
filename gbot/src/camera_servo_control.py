@@ -15,9 +15,9 @@ class CameraServoControl:
         cmd = data.data
 
         if cmd == "U":
-            self.tilt.move_to_position(self.tilt.get_current_position() - 40)
-        elif cmd == "D":
             self.tilt.move_to_position(self.tilt.get_current_position() + 40)
+        elif cmd == "D":
+            self.tilt.move_to_position(self.tilt.get_current_position() - 40)
         elif cmd == "L":
             self.pan.move_to_position(self.pan.get_current_position() + 40)
         elif cmd == "R":

@@ -203,7 +203,7 @@ class LaserScanProcessor:
     def pick_heading(self, laser_scan):
         if self.last_robot_state and \
                 laser_scan.header.stamp > self.last_robot_state.header.stamp:
-            rospy.loginfo("Ignoring laser scan request as robot state is %s", self.last_robot_state)
+            rospy.logdebug("Ignoring laser scan request as robot state is %s", self.last_robot_state)
             return None, None, None
 
         contiguous_pts = self.compute_possible_options(laser_scan, 0, 0, len(laser_scan.ranges), MIN_DIST)

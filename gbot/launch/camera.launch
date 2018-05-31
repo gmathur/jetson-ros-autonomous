@@ -1,7 +1,7 @@
 <launch>
   #### publish static transforms ###########
   <node pkg="tf" type="static_transform_publisher" name="base_link_to_camera"
-    args="0.2245 0.0 0.2 0.12 0.0  0.0 /base_link /camera 40" />
+    args="0.2245 0.0 0.2 0.12 0.0  0.0 base_link camera 40" />
 
   <!-- Run the camera  -->
   <node type="raspicam_node" pkg="raspicam_node" name="raspicam_node" output="screen">

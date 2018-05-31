@@ -53,14 +53,16 @@ diff_controller.py - controller for a differential drive
 
 import rospy
 import roslib
+import tf
 roslib.load_manifest('differential_drive')
-from math import sin, cos, pi
+from math import sin, cos, pi, asin
 
 from geometry_msgs.msg import Quaternion
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from tf.broadcaster import TransformBroadcaster
 from std_msgs.msg import Int16
+from geometry_msgs.msg import Pose2D
 
 #############################################################################
 class DiffTf:
@@ -80,6 +82,8 @@ class DiffTf:
         
         self.base_frame_id = rospy.get_param('~base_frame_id','base_link') # the name of the base frame of the robot
         self.odom_frame_id = rospy.get_param('~odom_frame_id', 'odom') # the name of the odometry reference frame
+        self.world_frame_id = rospy.get_param('~world_frame_id', 'world') # the name of the world reference frame
+        self.use_laser_scan_matcher = rospy.get_param("use_laser_scan_matcher", False)
         
         self.encoder_min = rospy.get_param('encoder_min', -32768)
         self.encoder_max = rospy.get_param('encoder_max', 32768)
@@ -118,7 +122,13 @@ class DiffTf:
         rospy.Subscriber("rwheel", Int16, self.rwheelCallback)
         self.odomPub = rospy.Publisher("odom", Odometry, queue_size=10)
         self.odomBroadcaster = TransformBroadcaster()
+
+        self.listener = tf.TransformListener()
+
+        if self.use_laser_scan_matcher:
+            rospy.Subscriber("pose2D", Pose2D, self.pose_callback, queue_size=1)
         
+
     #############################################################################
     def spin(self):
     #############################################################################
@@ -127,12 +137,32 @@ class DiffTf:
             self.update()
             r.sleep()
 
+    def update_from_laser_scan_matcher(self):
+        if not self.listener.canTransform(self.base_frame_id, self.world_frame_id,
+                rospy.Time(0)):
+            rospy.logwarn("Transform not available %s -> %s", "/%s" % (self.base_frame_id), "/%s" % (self.world_frame_id))
+            return
+        (trans, rot) = self.listener.lookupTransform("/%s" % (self.base_frame_id), "/%s" % (self.world_frame_id), rospy.Time(0))
+        #rospy.loginfo("Fixing odom x: %f y: %f th: %f -> x: %f y %f (%s %s)", self.x, self.y, self.th, trans[0], trans[1], trans, rot)
+
+        self.x = trans[0]
+        self.y = trans[1]
+        self.th = asin(rot[2]) * 2
+
+    def pose_callback(self, data):
+        rospy.loginfo("Fixing odom x: %f y: %f th: %f -> x: %f y %f th: %f", self.x, self.y, self.th, data.x, data.y, data.theta)
+        self.x = data.x
+        self.y = data.y
+        self.th = data.theta
      
     #############################################################################
     def update(self):
     #############################################################################
         now = rospy.Time.now()
         if now > self.t_next:
+            #if self.use_laser_scan_matcher:
+            #    self.update_from_laser_scan_matcher()
+
             elapsed = now - self.then
             self.then = now
             elapsed = elapsed.to_sec()
@@ -172,6 +202,7 @@ class DiffTf:
             quaternion.y = 0.0
             quaternion.z = sin( self.th / 2 )
             quaternion.w = cos( self.th / 2 )
+
             self.odomBroadcaster.sendTransform(
                 (self.x, self.y, 0),
                 (quaternion.x, quaternion.y, quaternion.z, quaternion.w),
@@ -179,7 +210,7 @@ class DiffTf:
                 self.base_frame_id,
                 self.odom_frame_id
                 )
-            
+
             odom = Odometry()
             odom.header.stamp = now
             odom.header.frame_id = self.odom_frame_id
@@ -230,6 +261,8 @@ if __name__ == '__main__':
     """ main """
     try:
         diffTf = DiffTf()
+        if rospy.get_param("use_laser_scan_matcher", False):
+            rospy.loginfo("Will use laser scan matcher to fix odom")
         diffTf.spin()
     except rospy.ROSInterruptException:
         pass

@@ -51,11 +51,11 @@ class ServoControl:
 
 class TiltControl(ServoControl):
     def __init__(self):
-        ServoControl.__init__(self, 12, pi, 800, 2000)
+        ServoControl.__init__(self, 13, pi, 1450, 1700)
 
 class PanControl(ServoControl):
     def __init__(self):
-        ServoControl.__init__(self, 13, pi, 1150, 1850)
+        ServoControl.__init__(self, 12, pi, 1350, 1650)
 
 if __name__ == '__main__':
 
@@ -63,7 +63,9 @@ if __name__ == '__main__':
     try:
         tilt.move_to_position(800)
         time.sleep(1)
-        tilt.move_to_position(2000)
+        tilt.move_to_position(2400)
+        time.sleep(1)
+        tilt.move_to_position(1500)
         time.sleep(1)
 
         pan = PanControl()
