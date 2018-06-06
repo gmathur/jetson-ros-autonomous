@@ -19,6 +19,7 @@ class TrackPose:
         self.robot_cmd_start_pose = None
         self.stop_tracking()
         self.manual_override = False
+        self.consecutive_stuck_poses = 0
 
         rospy.Subscriber("pose2D", Pose2D, self.pose_callback, queue_size=1)
         rospy.Subscriber("robot_commands", RobotCmd, self.robot_cmd_callback, queue_size=1)
@@ -65,6 +66,7 @@ class TrackPose:
         if self.last_robot_cmd and self.last_robot_cmd.header.stamp.secs > (time.time() - 2.0) or \
                 self.robot_cmd_start_pose is None or \
                 self.last_pose is None:
+            self.consecutive_stuck_poses = 0
             return
 
         delta_x = abs(self.last_pose.x - self.robot_cmd_start_pose.x)
@@ -73,10 +75,15 @@ class TrackPose:
             delta_x < 0.2 and delta_y < 0.2:
             rospy.logwarn("Robot is stuck - extricating. state %s delta x %f delta y %f", self.last_robot_cmd.cmd,
                 delta_x, delta_y)
-            self.unstuck()
+            self.consecutive_stuck_poses += 1
+
+            if self.consecutive_stuck_poses > 3:
+                self.unstuck()
         else:
             rospy.loginfo("Not stuck. state %s delta x %f delta y %f", self.last_robot_cmd.cmd,
                 delta_x, delta_y)
+        
+            self.consecutive_stuck_poses = 0
 
     def unstuck(self):
         data = Int16()
@@ -88,6 +95,7 @@ class TrackPose:
 
         data.data = 0
         self.manual_mode_pub.publish(data)
+        self.consecutive_stuck_poses = 0
 
     def robot_cmd_callback(self, data):
         if self.last_robot_cmd and self.robot_cmd_start_pose and \
