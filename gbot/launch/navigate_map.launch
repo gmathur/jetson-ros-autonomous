@@ -9,6 +9,7 @@
   <include file="$(find gbot)/launch/amcl_diff.launch" />
 
   <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <param name="controller_frequency" value="5.0" /> 
     <rosparam file="$(find gbot)/costmap_common_params.yaml" command="load" ns="global_costmap" />
     <rosparam file="$(find gbot)/costmap_common_params.yaml" command="load" ns="local_costmap" />
     <rosparam file="$(find gbot)/local_costmap_params.yaml" command="load" />
