@@ -150,7 +150,7 @@ class DiffTf:
         self.th = asin(rot[2]) * 2
 
     def pose_callback(self, data):
-        rospy.loginfo("Fixing odom x: %f y: %f th: %f -> x: %f y %f th: %f", self.x, self.y, self.th, data.x, data.y, data.theta)
+        rospy.logdebug("Fixing odom x: %f y: %f th: %f -> x: %f y %f th: %f", self.x, self.y, self.th, data.x, data.y, data.theta)
         self.x = data.x
         self.y = data.y
         self.th = data.theta
