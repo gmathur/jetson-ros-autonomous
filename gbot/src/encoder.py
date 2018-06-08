@@ -57,6 +57,7 @@ class RobotEncoderController:
 
     def set_state(self, data):
         state = data.cmd
+        rospy.logdebug("Received robot state: %s lencoder: %d rencoder: %d", state, self.lencoder.count, self.rencoder.count)
 
         if state == RobotState.FORWARD:
             self.lencoder.set_counter_positive(True)

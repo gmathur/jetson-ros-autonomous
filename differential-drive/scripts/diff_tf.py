@@ -125,8 +125,7 @@ class DiffTf:
 
         self.listener = tf.TransformListener()
 
-        if self.use_laser_scan_matcher:
-            rospy.Subscriber("pose2D", Pose2D, self.pose_callback, queue_size=1)
+        rospy.Subscriber("pose2D", Pose2D, self.pose_callback, queue_size=1)
         
 
     #############################################################################
@@ -150,10 +149,12 @@ class DiffTf:
         self.th = asin(rot[2]) * 2
 
     def pose_callback(self, data):
-        rospy.logdebug("Fixing odom x: %f y: %f th: %f -> x: %f y %f th: %f", self.x, self.y, self.th, data.x, data.y, data.theta)
-        self.x = data.x
-        self.y = data.y
-        self.th = data.theta
+        rospy.logdebug("Odom x: %f y: %f th: %f --- Pose x: %f y %f th: %f", self.x, self.y, self.th, data.x, data.y, data.theta)
+
+        if self.use_laser_scan_matcher:
+            self.x = data.x
+            self.y = data.y
+            self.th = data.theta
      
     #############################################################################
     def update(self):
