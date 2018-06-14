@@ -7,3 +7,6 @@
 [submodule "ydlidar"]
 	path = ydlidar
 	url = https://github.com/EAIBOT/ydlidar
+[submodule "realsense"]
+	path = realsense
+	url = https://github.com/intel-ros/realsense
