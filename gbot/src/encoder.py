@@ -50,8 +50,8 @@ class RobotEncoderController:
     def __init__(self):
         self.pi = pigpio.pi()
 
-        self.lencoder = EncoderCounter(self.pi, 23, 'lwheel')
-        self.rencoder = EncoderCounter(self.pi, 24, 'rwheel')
+        self.lencoder = EncoderCounter(self.pi, 24, 'lwheel')
+        self.rencoder = EncoderCounter(self.pi, 23, 'rwheel')
 
         rospy.Subscriber("robot_commands", RobotCmd, self.set_state, queue_size=1)
 
