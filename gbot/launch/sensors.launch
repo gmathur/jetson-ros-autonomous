@@ -1,8 +1,4 @@
 <launch>
-  #### Start display ###########
-
-  <!-- <include file="$(find gbot)/launch/display.launch" /> -->
-
   #### Start LIDAR ###########
 
   <include file="$(find gbot)/launch/lidar.launch" />
@@ -10,11 +6,6 @@
   #### Start MPU 9255 driver ###########
 
   <include file="$(find gbot)/launch/imu.launch" />
-
-  #### Start proximity scanning ###########
-
-  <node pkg="gbot" type="distance_scanner.py" name="proximity_scanner" output="screen" required="true">
-  </node>
 
   #### Start wheel encoders ###########
 

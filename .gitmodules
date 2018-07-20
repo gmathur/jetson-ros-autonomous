@@ -1,12 +1,33 @@
-[submodule "RTIMULib2"]
-	path = RTIMULib2
-	url = https://github.com/Nick-Currawong/RTIMULib2
-[submodule "raspicam_node"]
-	path = raspicam_node
-	url = https://github.com/UbiquityRobotics/raspicam_node
 [submodule "ydlidar"]
 	path = ydlidar
 	url = https://github.com/EAIBOT/ydlidar
 [submodule "realsense"]
 	path = realsense
 	url = https://github.com/intel-ros/realsense
+[submodule "buildLibrealsense2TX"]
+	path = modules_jetson/buildLibrealsense2TX
+	url = https://github.com/jetsonhacks/buildLibrealsense2TX
+[submodule "modules_jetson/installROSTX2"]
+	path = modules_jetson/installROSTX2
+	url = https://github.com/gmathur/installROSTX2
+[submodule "modules_jetson/installRACECARUdev"]
+	path = modules_jetson/installRACECARUdev
+	url = https://github.com/gmathur/installRACECARUdev
+[submodule "razor_imu_m0_driver"]
+	path = razor_imu_m0_driver
+	url = https://github.com/gmathur/razor_imu_m0_driver
+[submodule "racecar-controllers"]
+	path = racecar-controllers
+	url = https://github.com/gmathur/racecar-controllers
+[submodule "vesc"]
+	path = vesc
+	url = https://github.com/gmathur/vesc
+[submodule "racecar"]
+	path = racecar
+	url = https://github.com/gmathur/racecar
+[submodule "modules_jetson/vesc-firmware"]
+	path = modules_jetson/vesc-firmware
+	url = https://github.com/gmathur/vesc-firmware
+[submodule ".vim/bundle/vim-colors-solarized"]
+	path = .vim/bundle/vim-colors-solarized
+	url = https://github.com/altercation/vim-colors-solarized
